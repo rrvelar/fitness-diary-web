@@ -1,5 +1,5 @@
-import { useAccount, useWriteContract, useReadContract } from 'wagmi'
-import { useState } from 'react'
+import { useAccount, useWriteContract, useReadContract, useBlockNumber } from 'wagmi'
+import { useEffect, useState } from 'react'
 import abi from '../abi/FitnessDiary.json'
 
 export default function DiaryPage() {
@@ -10,13 +10,18 @@ export default function DiaryPage() {
   const [steps, setSteps] = useState('')
 
   const { writeContractAsync } = useWriteContract()
-  const { data: entries } = useReadContract({
+  const { data: entries, refetch } = useReadContract({
     address: process.env.NEXT_PUBLIC_DIARY_ADDRESS as `0x${string}`,
     abi,
     functionName: 'getEntries',
     args: [address],
-    watch: true
   })
+
+  const { data: block } = useBlockNumber({ watch: true })
+
+  useEffect(() => {
+    refetch()
+  }, [block, refetch])
 
   const addEntry = async () => {
     if (!isConnected) return alert('Подключи кошелёк')
