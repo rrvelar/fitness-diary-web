@@ -1,6 +1,14 @@
+import { useAccount, useConnect, useDisconnect, useSigner } from 'wagmi'
+import { InjectedConnector } from 'wagmi/connectors/injected'
 import { useState } from 'react'
+import abi from '../abi/FitnessDiary.json'
+import bytecode from '../abi/FitnessDiary.bytecode.json'
+import { ethers } from 'ethers'
 
 export default function DeployPage() {
+  const { address, isConnected } = useAccount()
+  const { connect } = useConnect({ connector: new InjectedConnector() })
+  const { disconnect } = useDisconnect()
   const [loading, setLoading] = useState(false)
   const [contractAddress, setContractAddress] = useState<string | null>(null)
   const [txHash, setTxHash] = useState<string | null>(null)
@@ -10,21 +18,21 @@ export default function DeployPage() {
     try {
       setLoading(true)
       setError(null)
-      setContractAddress(null)
-      setTxHash(null)
 
-      const res = await fetch('/api/deploy', {
-        method: 'POST',
-      })
-
-      const data = await res.json()
-
-      if (res.ok) {
-        setContractAddress(data.address)
-        setTxHash(data.txHash)
-      } else {
-        setError(data.error || 'Ошибка при деплое')
+      if (!window.ethereum) {
+        throw new Error('MetaMask не найден')
       }
+
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const signer = await provider.getSigner()
+
+      const factory = new ethers.ContractFactory(abi, bytecode, signer)
+      const contract = await factory.deploy()
+
+      await contract.waitForDeployment()
+
+      setContractAddress(await contract.getAddress())
+      setTxHash(contract.deploymentTransaction()?.hash || '')
     } catch (e: any) {
       setError(e.message)
     } finally {
@@ -35,21 +43,19 @@ export default function DeployPage() {
   return (
     <div style={{ padding: '40px', fontFamily: 'sans-serif' }}>
       <h1>🚀 Деплой Fitness Diary</h1>
-      <button
-        onClick={handleDeploy}
-        disabled={loading}
-        style={{
-          padding: '10px 20px',
-          fontSize: '16px',
-          cursor: 'pointer',
-          backgroundColor: '#0070f3',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-        }}
-      >
-        {loading ? 'Деплой...' : 'Развернуть контракт'}
-      </button>
+
+      {!isConnected ? (
+        <button onClick={() => connect()}>Подключить кошелёк</button>
+      ) : (
+        <>
+          <p>Кошелёк: {address}</p>
+          <button onClick={() => disconnect()}>Отключить</button>
+          <br /><br />
+          <button onClick={handleDeploy} disabled={loading}>
+            {loading ? 'Деплой...' : 'Развернуть контракт'}
+          </button>
+        </>
+      )}
 
       {contractAddress && (
         <div style={{ marginTop: '20px' }}>
@@ -59,11 +65,7 @@ export default function DeployPage() {
         </div>
       )}
 
-      {error && (
-        <div style={{ marginTop: '20px', color: 'red' }}>
-          ❌ {error}
-        </div>
-      )}
+      {error && <div style={{ marginTop: '20px', color: 'red' }}>❌ {error}</div>}
     </div>
   )
 }
