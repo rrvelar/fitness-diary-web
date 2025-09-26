@@ -3,8 +3,8 @@ import { createWalletClient, http, publicActions, Hex } from 'viem'
 import { baseSepolia, base } from 'viem/chains'
 import { privateKeyToAccount } from 'viem/accounts'
 
-import abi from '@/abi/FitnessDiary.json'
-import bytecode from '@/abi/FitnessDiary.bytecode.json'
+import abi from '../../abi/FitnessDiary.json'
+import bytecode from '../../abi/FitnessDiary.bytecode.json'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -12,16 +12,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // приватный ключ берём из переменных окружения Vercel (если используем автоматический деплой)
     const pk = process.env.DEPLOYER_PRIVATE_KEY as Hex | undefined
     if (!pk) {
       return res.status(400).json({ error: 'DEPLOYER_PRIVATE_KEY не задан' })
     }
 
-    // создаём аккаунт
     const account = privateKeyToAccount(pk as `0x${string}`)
-
-    // выбираем сеть: Base Sepolia (тест) или Base (основная)
     const chain = req.query.chain === 'base' ? base : baseSepolia
 
     const walletClient = createWalletClient({
@@ -30,7 +26,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       transport: http(),
     }).extend(publicActions)
 
-    // деплой контракта
     const hash = await walletClient.deployContract({
       abi,
       bytecode: bytecode as `0x${string}`,
