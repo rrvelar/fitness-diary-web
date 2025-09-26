@@ -1,5 +1,4 @@
 import { useAccount, useConnect, useDisconnect, useWalletClient } from 'wagmi'
-import { InjectedConnector } from 'wagmi/connectors/injected'
 import { useState } from 'react'
 import abi from '../abi/FitnessDiary.json'
 import bytecode from '../abi/FitnessDiary.bytecode.json'
@@ -7,7 +6,7 @@ import { ethers } from 'ethers'
 
 export default function DeployPage() {
   const { address, isConnected } = useAccount()
-  const { connect } = useConnect({ connector: new InjectedConnector() })
+  const { connect, connectors } = useConnect()
   const { disconnect } = useDisconnect()
   const { data: walletClient } = useWalletClient()
 
@@ -47,7 +46,7 @@ export default function DeployPage() {
       <h1>🚀 Деплой Fitness Diary</h1>
 
       {!isConnected ? (
-        <button onClick={() => connect()}>Подключить кошелёк</button>
+        <button onClick={() => connect({ connector: connectors[0] })}>Подключить кошелёк</button>
       ) : (
         <>
           <p>Кошелёк: {address}</p>
