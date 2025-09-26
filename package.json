@@ -15,6 +15,7 @@
     "@rainbow-me/rainbowkit": "^2.2.8",
     "viem": "^2.9.7",
     "@tanstack/react-query": "^5.51.0"
+    "ethers": "^6.13.0"
   },
   "devDependencies": {
     "typescript": "^5.4.5",
