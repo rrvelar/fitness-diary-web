@@ -1,5 +1,5 @@
 import { useAccount, useConnect, useDisconnect, useWalletClient } from 'wagmi'
-import { injected } from '@wagmi/core/connectors'
+import { InjectedConnector } from 'wagmi/connectors/injected'
 import { useState } from 'react'
 import abi from '../abi/FitnessDiary.json'
 import bytecode from '../abi/FitnessDiary.bytecode.json'
@@ -7,7 +7,7 @@ import { ethers } from 'ethers'
 
 export default function DeployPage() {
   const { address, isConnected } = useAccount()
-  const { connect } = useConnect({ connector: injected() })
+  const { connect } = useConnect({ connector: new InjectedConnector() })
   const { disconnect } = useDisconnect()
   const { data: walletClient } = useWalletClient()
 
