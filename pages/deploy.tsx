@@ -1,19 +1,31 @@
 import { useState } from 'react'
 
 export default function DeployPage() {
-  const [network, setNetwork] = useState<'base-sepolia' | 'base'>('base-sepolia')
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<any>(null)
+  const [contractAddress, setContractAddress] = useState<string | null>(null)
+  const [txHash, setTxHash] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const deploy = async () => {
-    setLoading(true); setError(null); setResult(null)
+  const handleDeploy = async () => {
     try {
-      const res = await fetch(`/api/deploy?network=${network}`, { method: 'POST' })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error || 'Deploy failed')
-      setResult(json)
-    } catch (e:any) {
+      setLoading(true)
+      setError(null)
+      setContractAddress(null)
+      setTxHash(null)
+
+      const res = await fetch('/api/deploy', {
+        method: 'POST',
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setContractAddress(data.address)
+        setTxHash(data.txHash)
+      } else {
+        setError(data.error || 'Ошибка при деплое')
+      }
+    } catch (e: any) {
       setError(e.message)
     } finally {
       setLoading(false)
@@ -21,30 +33,37 @@ export default function DeployPage() {
   }
 
   return (
-    <main style={{ maxWidth: 700, margin: '40px auto', padding: 16 }}>
-      <h1>Развёртывание смарт‑контракта</h1>
-      <p>Этот способ использует сервер Vercel и приватный ключ из переменной окружения <code>DEPLOYER_PRIVATE_KEY</code>. Используйте новый «burner»‑кошелёк.</p>
-      <label>
-        Сеть:&nbsp;
-        <select value={network} onChange={e=>setNetwork(e.target.value as any)}>
-          <option value="base-sepolia">Base Sepolia (тестовая)</option>
-          <option value="base">Base Mainnet (боевая)</option>
-        </select>
-      </label>
-      <div style={{marginTop:12}}>
-        <button onClick={deploy} disabled={loading} style={{padding:'8px 12px'}}>
-          {loading ? 'Деплой...' : 'Развернуть контракт'}
-        </button>
-      </div>
-      {error && <p style={{color:'red'}}>Ошибка: {error}</p>}
-      {result && (
-        <div style={{marginTop:16, padding:12, border:'1px solid #ccc', borderRadius:8}}>
-          <div><b>Адрес контракта:</b> {result.address}</div>
-          <div><b>Tx Hash:</b> {result.hash}</div>
-          <div><b>ChainId:</b> {result.chainId}</div>
-          <p>Скопируйте адрес в переменную <code>NEXT_PUBLIC_DIARY_ADDRESS</code> на Vercel и сделайте Redeploy.</p>
+    <div style={{ padding: '40px', fontFamily: 'sans-serif' }}>
+      <h1>🚀 Деплой Fitness Diary</h1>
+      <button
+        onClick={handleDeploy}
+        disabled={loading}
+        style={{
+          padding: '10px 20px',
+          fontSize: '16px',
+          cursor: 'pointer',
+          backgroundColor: '#0070f3',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+        }}
+      >
+        {loading ? 'Деплой...' : 'Развернуть контракт'}
+      </button>
+
+      {contractAddress && (
+        <div style={{ marginTop: '20px' }}>
+          <p>✅ Контракт успешно развернут!</p>
+          <p><b>Адрес:</b> {contractAddress}</p>
+          <p><b>Tx Hash:</b> {txHash}</p>
         </div>
       )}
-    </main>
+
+      {error && (
+        <div style={{ marginTop: '20px', color: 'red' }}>
+          ❌ {error}
+        </div>
+      )}
+    </div>
   )
 }
