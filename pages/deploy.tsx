@@ -1,4 +1,4 @@
-import { useAccount, useConnect, useDisconnect, useSigner } from 'wagmi'
+import { useAccount, useConnect, useDisconnect, useWalletClient } from 'wagmi'
 import { InjectedConnector } from 'wagmi/connectors/injected'
 import { useState } from 'react'
 import abi from '../abi/FitnessDiary.json'
@@ -9,6 +9,8 @@ export default function DeployPage() {
   const { address, isConnected } = useAccount()
   const { connect } = useConnect({ connector: new InjectedConnector() })
   const { disconnect } = useDisconnect()
+  const { data: walletClient } = useWalletClient()
+
   const [loading, setLoading] = useState(false)
   const [contractAddress, setContractAddress] = useState<string | null>(null)
   const [txHash, setTxHash] = useState<string | null>(null)
@@ -19,8 +21,8 @@ export default function DeployPage() {
       setLoading(true)
       setError(null)
 
-      if (!window.ethereum) {
-        throw new Error('MetaMask не найден')
+      if (!walletClient) {
+        throw new Error('Кошелёк не подключен')
       }
 
       const provider = new ethers.BrowserProvider(window.ethereum)
