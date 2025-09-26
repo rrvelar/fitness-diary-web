@@ -31,7 +31,7 @@ export default function DiaryPage() {
     await writeContractAsync({
       address: process.env.NEXT_PUBLIC_DIARY_ADDRESS as `0x${string}`,
       abi,
-      functionName: 'addEntry',
+      functionName: 'addEntry', // ✅ тут вызываем addEntry
       args: [Number(weight), Number(calIn), Number(calOut), Number(steps)]
     })
   }
