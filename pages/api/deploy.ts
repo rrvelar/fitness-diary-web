@@ -35,8 +35,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const publicClient = createPublicClient({ chain, transport: http(rpcUrl) })
 
   try {
-    const hash = await walletClient.deployContract({ abi, bytecode })
-    const receipt = await publicClient.waitForTransactionReceipt({ hash })
+    const hash = await walletClient.deployContract({
+  abi,
+  bytecode: bytecode as `0x${string}`,
+})
+    const receipt = await publicClient.waitForTransactionReceipt({ hash: hash as `0x${string}` })
     return res.status(200).json({
       address: receipt.contractAddress,
       hash,
