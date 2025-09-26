@@ -38,6 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const hash = await walletClient.deployContract({
   abi,
   bytecode: bytecode as `0x${string}`,
+  args: [], // обязательно добавляем пустой массив, если у конструктора нет аргументов
 })
     const receipt = await publicClient.waitForTransactionReceipt({ hash: hash as `0x${string}` })
     return res.status(200).json({
