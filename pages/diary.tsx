@@ -10,12 +10,14 @@ export default function DiaryPage() {
   const [steps, setSteps] = useState('')
 
   const { writeContractAsync } = useWriteContract()
-  const { data: entries, refetch } = useReadContract({
+  const { data, refetch } = useReadContract({
     address: process.env.NEXT_PUBLIC_DIARY_ADDRESS as `0x${string}`,
     abi,
     functionName: 'getEntries',
     args: [address],
   })
+
+  const entries = (data as any[]) || []
 
   const { data: block } = useBlockNumber({ watch: true })
 
@@ -60,7 +62,7 @@ export default function DiaryPage() {
               </tr>
             </thead>
             <tbody>
-              {entries && entries.map((e: any, i: number) => (
+              {entries.map((e: any, i: number) => (
                 <tr key={i}>
                   <td className="border p-2">{new Date(Number(e.date) * 1000).toLocaleDateString()}</td>
                   <td className="border p-2">{e.weight}</td>
