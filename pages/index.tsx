@@ -1,94 +1,96 @@
-import { useState } from 'react'
-import { useAccount, useWriteContract, useReadContract } from 'wagmi'
-import { ConnectButton } from '@rainbow-me/rainbowkit'
-import diaryAbi from '../abi/FitnessDiary.json'
+import { useAccount, useWriteContract, useReadContract, useBlockNumber } from 'wagmi'
+import { useEffect, useState } from 'react'
+import abi from '../abi/FitnessDiary.json'
 
-const DIARY = process.env.NEXT_PUBLIC_DIARY_ADDRESS as `0x${string}` | undefined
-
-function yyyymmdd(date: Date) {
-  const y = date.getUTCFullYear()
-  const m = (date.getUTCMonth() + 1).toString().padStart(2, '0')
-  const d = date.getUTCDate().toString().padStart(2, '0')
-  return Number(`${y}${m}${d}`)
-}
-
-export default function Home() {
-  const { address } = useAccount()
-  const [date, setDate] = useState(new Date())
-  const [weightKg, setWeightKg] = useState('')
+export default function HomePage() {
+  const { address, isConnected } = useAccount()
+  const [weight, setWeight] = useState('')
   const [calIn, setCalIn] = useState('')
   const [calOut, setCalOut] = useState('')
   const [steps, setSteps] = useState('')
-  const { writeContractAsync } = useWriteContract()
 
-  const { data: dates } = useReadContract({
-    address: DIARY,
-    abi: diaryAbi as any,
-    functionName: 'getDates',
-    args: [address ?? '0x0000000000000000000000000000000000000000'],
-    query: { enabled: !!address && !!DIARY },
-  }) as { data: number[] | undefined }
+  const { writeContractAsync, isPending } = useWriteContract()
 
-  const onLog = async () => {
-    if (!DIARY) return alert('Сначала разверните контракт на странице /deploy и укажите адрес в Vercel ENV')
-    if (!weightKg || !calIn || !calOut || !steps) return alert('Заполните все поля')
-    const d = yyyymmdd(date)
-    const weightGrams = Math.round(parseFloat(weightKg) * 1000)
-    await writeContractAsync({
-      address: DIARY,
-      abi: diaryAbi as any,
-      functionName: 'logEntry',
-      args: [d, weightGrams, parseInt(calIn), parseInt(calOut), parseInt(steps)],
-    })
-    alert('Запись добавлена! Обновите страницу, чтобы увидеть её в таблице.')
+  const { data, refetch } = useReadContract({
+    address: process.env.NEXT_PUBLIC_DIARY_ADDRESS as `0x${string}`,
+    abi,
+    functionName: 'getEntries',
+    args: address ? [address] : undefined,
+  })
+
+  const entries = (data as any[]) || []
+  const { data: block } = useBlockNumber({ watch: true })
+
+  useEffect(() => {
+    if (isConnected) refetch()
+  }, [block, isConnected, refetch])
+
+  const addEntry = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!isConnected) return alert('Подключи кошелёк')
+
+    try {
+      await writeContractAsync({
+        address: process.env.NEXT_PUBLIC_DIARY_ADDRESS as `0x${string}`,
+        abi,
+        functionName: 'addEntry',
+        args: [
+          BigInt(weight || '0'),
+          BigInt(calIn || '0'),
+          BigInt(calOut || '0'),
+          BigInt(steps || '0'),
+        ],
+      })
+    } catch (err) {
+      console.error('Ошибка при добавлении записи:', err)
+      alert('Ошибка при добавлении записи, см. консоль')
+    }
   }
 
   return (
-    <main style={{ maxWidth: 900, margin: '40px auto', padding: 16 }}>
-      <header style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-        <h1>Fitness Diary (Base)</h1>
-        <ConnectButton />
-      </header>
+    <div className="p-10 font-sans max-w-3xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">📓 Fitness Diary</h1>
 
-      {!DIARY && (
-        <div style={{padding:12, border:'1px solid #ccc', borderRadius:8, marginTop:12}}>
-          <b>Шаг 1:</b> Откройте <code>/deploy</code>, нажмите «Развернуть контракт».<br/>
-          <b>Шаг 2:</b> Скопируйте адрес контракта и добавьте его в Vercel как <code>NEXT_PUBLIC_DIARY_ADDRESS</code>, затем redeploy.
-        </div>
+      {isConnected ? (
+        <form onSubmit={addEntry} className="space-y-4">
+          <input className="border p-2 w-full rounded" placeholder="Вес (кг)" value={weight} onChange={e => setWeight(e.target.value)} />
+          <input className="border p-2 w-full rounded" placeholder="Калории потреблено" value={calIn} onChange={e => setCalIn(e.target.value)} />
+          <input className="border p-2 w-full rounded" placeholder="Калории сожжено" value={calOut} onChange={e => setCalOut(e.target.value)} />
+          <input className="border p-2 w-full rounded" placeholder="Шаги" value={steps} onChange={e => setSteps(e.target.value)} />
+
+          <button type="submit" disabled={isPending} className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 disabled:opacity-50">
+            {isPending ? 'Добавление...' : 'Добавить запись'}
+          </button>
+
+          <h2 className="text-2xl font-semibold mt-8 mb-4">Мои записи</h2>
+          {entries.length > 0 ? (
+            <table className="w-full border-collapse border border-gray-300">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border p-2">Дата</th>
+                  <th className="border p-2">Вес (кг)</th>
+                  <th className="border p-2">Калории (in/out)</th>
+                  <th className="border p-2">Шаги</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((e: any, i: number) => (
+                  <tr key={i}>
+                    <td className="border p-2">{new Date(Number(e.date) * 1000).toLocaleDateString()}</td>
+                    <td className="border p-2">{e.weight.toString()}</td>
+                    <td className="border p-2">{e.caloriesIn.toString()}/{e.caloriesOut.toString()}</td>
+                    <td className="border p-2">{e.steps.toString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>Нет записей</p>
+          )}
+        </form>
+      ) : (
+        <p>Подключи кошелёк</p>
       )}
-
-      <section style={{ display: 'grid', gap: 12, marginTop: 16 }}>
-        <label>
-          Дата:&nbsp;
-          <input type="date" value={date.toISOString().slice(0,10)} onChange={e=>setDate(new Date(e.target.value+'T00:00:00Z'))} />
-        </label>
-        <label>
-          Вес (кг):&nbsp;
-          <input value={weightKg} onChange={e=>setWeightKg(e.target.value)} placeholder="72.3" />
-        </label>
-        <label>
-          Калории потреблено:&nbsp;
-          <input value={calIn} onChange={e=>setCalIn(e.target.value)} placeholder="2000" />
-        </label>
-        <label>
-          Калории сожжено:&nbsp;
-          <input value={calOut} onChange={e=>setCalOut(e.target.value)} placeholder="500" />
-        </label>
-        <label>
-          Шаги:&nbsp;
-          <input value={steps} onChange={e=>setSteps(e.target.value)} placeholder="8000" />
-        </label>
-        <button onClick={onLog} style={{padding:'8px 12px'}}>Добавить запись</button>
-      </section>
-
-      <hr style={{ margin: '24px 0' }} />
-
-      <h2>Мои даты (для примера)</h2>
-      <ul>
-        {Array.isArray(dates) && dates.map((d,i)=>(
-          <li key={i}>{String(d)}</li>
-        ))}
-      </ul>
-    </main>
+    </div>
   )
 }
