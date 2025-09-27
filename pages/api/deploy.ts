@@ -3,8 +3,8 @@ import { createWalletClient, http, publicActions, Hex } from 'viem'
 import { baseSepolia, base } from 'viem/chains'
 import { privateKeyToAccount } from 'viem/accounts'
 
-import abi from '../../abi/FitnessDiary.json'
-import bytecode from '../../abi/FitnessDiary.bytecode.json'
+import abi from "../../abi/FitnessDiary.json";
+import bytecode from "../../abi/FitnessDiary.bytecode.json";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -27,10 +27,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }).extend(publicActions)
 
     const hash = await walletClient.deployContract({
-      abi,
-      bytecode: bytecode as `0x${string}`,
-      args: [],
-    })
+  abi,
+  bytecode: bytecode as `0x${string}`,
+  args: [],
+});
 
     const receipt = await walletClient.waitForTransactionReceipt({ hash: hash as `0x${string}` })
 
