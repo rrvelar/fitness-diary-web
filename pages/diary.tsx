@@ -49,11 +49,14 @@ export default function DiaryPage() {
 
   const { writeContractAsync } = useWriteContract()
   const { data, refetch } = useReadContract({
-    address: contractAddress,
-    abi: diaryAbi,
-    functionName: 'getEntries',
-    args: [address],
-  })
+  address: contractAddress,
+  abi: diaryAbi,
+  functionName: 'getEntries',
+  args: address ? [address] : undefined,
+  query: {
+    enabled: Boolean(address),
+  }
+})
 
   const entries = (data as any[]) || []
   const { data: block } = useBlockNumber({ watch: true })
