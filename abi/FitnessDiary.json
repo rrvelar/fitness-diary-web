@@ -1,10 +1,11 @@
 [
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_weight", "type": "uint256" },
-      { "internalType": "uint256", "name": "_caloriesIn", "type": "uint256" },
-      { "internalType": "uint256", "name": "_caloriesOut", "type": "uint256" },
-      { "internalType": "uint256", "name": "_steps", "type": "uint256" }
+      { "internalType": "uint256", "name": "date", "type": "uint256" },
+      { "internalType": "uint256", "name": "weight", "type": "uint256" },
+      { "internalType": "uint256", "name": "caloriesIn", "type": "uint256" },
+      { "internalType": "uint256", "name": "caloriesOut", "type": "uint256" },
+      { "internalType": "uint256", "name": "steps", "type": "uint256" }
     ],
     "name": "addEntry",
     "outputs": [],
@@ -14,10 +15,11 @@
   {
     "inputs": [
       { "internalType": "uint256", "name": "index", "type": "uint256" },
-      { "internalType": "uint256", "name": "_weight", "type": "uint256" },
-      { "internalType": "uint256", "name": "_caloriesIn", "type": "uint256" },
-      { "internalType": "uint256", "name": "_caloriesOut", "type": "uint256" },
-      { "internalType": "uint256", "name": "_steps", "type": "uint256" }
+      { "internalType": "uint256", "name": "date", "type": "uint256" },
+      { "internalType": "uint256", "name": "weight", "type": "uint256" },
+      { "internalType": "uint256", "name": "caloriesIn", "type": "uint256" },
+      { "internalType": "uint256", "name": "caloriesOut", "type": "uint256" },
+      { "internalType": "uint256", "name": "steps", "type": "uint256" }
     ],
     "name": "updateEntry",
     "outputs": [],
@@ -45,5 +47,83 @@
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" },
+      { "internalType": "uint256", "name": "index", "type": "uint256" }
+    ],
+    "name": "getEntry",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint256", "name": "date", "type": "uint256" },
+          { "internalType": "uint256", "name": "weight", "type": "uint256" },
+          { "internalType": "uint256", "name": "caloriesIn", "type": "uint256" },
+          { "internalType": "uint256", "name": "caloriesOut", "type": "uint256" },
+          { "internalType": "uint256", "name": "steps", "type": "uint256" }
+        ],
+        "internalType": "struct FitnessDiary.Entry",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" }
+    ],
+    "name": "getEntriesCount",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
+      { "indexed": true, "internalType": "uint256", "name": "date", "type": "uint256" },
+      {
+        "components": [
+          { "internalType": "uint256", "name": "date", "type": "uint256" },
+          { "internalType": "uint256", "name": "weight", "type": "uint256" },
+          { "internalType": "uint256", "name": "caloriesIn", "type": "uint256" },
+          { "internalType": "uint256", "name": "caloriesOut", "type": "uint256" },
+          { "internalType": "uint256", "name": "steps", "type": "uint256" }
+        ],
+        "indexed": false,
+        "internalType": "struct FitnessDiary.Entry",
+        "name": "entry",
+        "type": "tuple"
+      }
+    ],
+    "name": "EntryAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
+      { "indexed": true, "internalType": "uint256", "name": "date", "type": "uint256" },
+      {
+        "components": [
+          { "internalType": "uint256", "name": "date", "type": "uint256" },
+          { "internalType": "uint256", "name": "weight", "type": "uint256" },
+          { "internalType": "uint256", "name": "caloriesIn", "type": "uint256" },
+          { "internalType": "uint256", "name": "caloriesOut", "type": "uint256" },
+          { "internalType": "uint256", "name": "steps", "type": "uint256" }
+        ],
+        "indexed": false,
+        "internalType": "struct FitnessDiary.Entry",
+        "name": "entry",
+        "type": "tuple"
+      }
+    ],
+    "name": "EntryUpdated",
+    "type": "event"
   }
 ]
