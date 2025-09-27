@@ -1,4 +1,4 @@
-// providers.tsx
+// components/providers.tsx
 import '@rainbow-me/rainbowkit/styles.css';
 import {
   getDefaultConfig,
