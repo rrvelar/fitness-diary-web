@@ -4,7 +4,7 @@ import { baseSepolia, base } from 'viem/chains'
 import { privateKeyToAccount } from 'viem/accounts'
 
 import abi from "../../abi/FitnessDiary.json";
-import bytecode from "../../abi/FitnessDiary.bytecode.json";
+import bytecodeJson from "../../abi/FitnessDiary.bytecode.json";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
