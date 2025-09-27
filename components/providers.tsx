@@ -7,13 +7,11 @@ import {
 import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { base } from 'wagmi/chains';
-import { injected } from 'wagmi/connectors';
 
 const config = getDefaultConfig({
   appName: 'Fitness Diary',
   projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!,
   chains: [base],
-  connectors: [injected()], // ✅ только MetaMask
 });
 
 const queryClient = new QueryClient();
