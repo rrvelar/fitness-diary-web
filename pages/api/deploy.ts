@@ -1,10 +1,11 @@
+// pages/api/deploy.ts
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { createWalletClient, http, publicActions, Hex } from 'viem'
 import { baseSepolia, base } from 'viem/chains'
 import { privateKeyToAccount } from 'viem/accounts'
 
-import abi from "../../abi/FitnessDiary.json";
-import bytecodeJson from "../../abi/FitnessDiary.bytecode.json";
+import abi from "../../abi/FitnessDiary.json"
+import bytecodeJson from "../../abi/FitnessDiary.bytecode.json"
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -26,6 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       transport: http(),
     }).extend(publicActions)
 
+    // ✅ Правильно: берём именно bytecodeJson.bytecode
     const hash = await walletClient.deployContract({
       abi,
       bytecode: bytecodeJson.bytecode as `0x${string}`,
