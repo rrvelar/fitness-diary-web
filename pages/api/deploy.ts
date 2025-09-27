@@ -27,12 +27,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }).extend(publicActions)
 
     const hash = await walletClient.deployContract({
-  abi,
-  bytecode: bytecodeJson.bytecode as `0x${string}`,
-  args: [],
-});
+      abi,
+      bytecode: bytecodeJson.bytecode as `0x${string}`,
+      args: [],
+    })
 
-    const receipt = await walletClient.waitForTransactionReceipt({ hash: hash as `0x${string}` })
+    const receipt = await walletClient.waitForTransactionReceipt({
+      hash: hash as `0x${string}`,
+    })
 
     return res.status(200).json({
       address: receipt.contractAddress,
