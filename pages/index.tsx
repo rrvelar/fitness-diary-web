@@ -1,96 +1,73 @@
-import { useAccount, useWriteContract, useReadContract, useBlockNumber } from 'wagmi'
-import { useEffect, useState } from 'react'
-import abi from '../abi/FitnessDiary.json'
+import { useState } from "react";
+import { useWalletClient } from "wagmi";
+import diaryAbi from "../abi/FitnessDiary.json";
 
-export default function HomePage() {
-  const { address, isConnected } = useAccount()
-  const [weight, setWeight] = useState('')
-  const [calIn, setCalIn] = useState('')
-  const [calOut, setCalOut] = useState('')
-  const [steps, setSteps] = useState('')
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
 
-  const { writeContractAsync, isPending } = useWriteContract()
+export default function Home() {
+  const { data: walletClient } = useWalletClient();
 
-  const { data, refetch } = useReadContract({
-    address: process.env.NEXT_PUBLIC_DIARY_ADDRESS as `0x${string}`,
-    abi,
-    functionName: 'getEntries',
-    args: address ? [address] : undefined,
-  })
+  const [weight, setWeight] = useState<number>(0);
+  const [caloriesIn, setCaloriesIn] = useState<number>(0);
+  const [caloriesOut, setCaloriesOut] = useState<number>(0);
+  const [steps, setSteps] = useState<number>(0);
 
-  const entries = (data as any[]) || []
-  const { data: block } = useBlockNumber({ watch: true })
-
-  useEffect(() => {
-    if (isConnected) refetch()
-  }, [block, isConnected, refetch])
-
-  const addEntry = async (e?: React.FormEvent) => {
-    e?.preventDefault()
-    if (!isConnected) return alert('Подключи кошелёк')
+  const addEntry = async () => {
+    if (!walletClient) {
+      alert("Нет подключенного кошелька");
+      return;
+    }
 
     try {
-      await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_DIARY_ADDRESS as `0x${string}`,
-        abi,
-        functionName: 'addEntry',
+      // текущая дата в формате YYYYMMDD
+      const today = Number(new Date().toISOString().slice(0, 10).replace(/-/g, ""));
+
+      const txHash = await walletClient.writeContract({
+        address: CONTRACT_ADDRESS,
+        abi: diaryAbi,
+        functionName: "logEntry",
         args: [
-          BigInt(weight || '0'),
-          BigInt(calIn || '0'),
-          BigInt(calOut || '0'),
-          BigInt(steps || '0'),
+          today,
+          BigInt(weight),
+          BigInt(caloriesIn),
+          BigInt(caloriesOut),
+          BigInt(steps),
         ],
-      })
-    } catch (err) {
-      console.error('Ошибка при добавлении записи:', err)
-      alert('Ошибка при добавлении записи, см. консоль')
+      });
+
+      console.log("txHash:", txHash);
+      alert("Запись отправлена в блокчейн!");
+    } catch (err: any) {
+      console.error("Ошибка при добавлении записи:", err);
+      alert("Ошибка при добавлении записи: " + err.message);
     }
-  }
+  };
 
   return (
-    <div className="p-10 font-sans max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">📓 Fitness Diary</h1>
+    <div>
+      <h1>Fitness Diary</h1>
+      <input
+        type="number"
+        placeholder="Вес (г)"
+        onChange={(e) => setWeight(Number(e.target.value))}
+      />
+      <input
+        type="number"
+        placeholder="Калории потребленные"
+        onChange={(e) => setCaloriesIn(Number(e.target.value))}
+      />
+      <input
+        type="number"
+        placeholder="Калории сожженные"
+        onChange={(e) => setCaloriesOut(Number(e.target.value))}
+      />
+      <input
+        type="number"
+        placeholder="Шаги"
+        onChange={(e) => setSteps(Number(e.target.value))}
+      />
 
-      {isConnected ? (
-        <form onSubmit={addEntry} className="space-y-4">
-          <input className="border p-2 w-full rounded" placeholder="Вес (кг)" value={weight} onChange={e => setWeight(e.target.value)} />
-          <input className="border p-2 w-full rounded" placeholder="Калории потреблено" value={calIn} onChange={e => setCalIn(e.target.value)} />
-          <input className="border p-2 w-full rounded" placeholder="Калории сожжено" value={calOut} onChange={e => setCalOut(e.target.value)} />
-          <input className="border p-2 w-full rounded" placeholder="Шаги" value={steps} onChange={e => setSteps(e.target.value)} />
-
-          <button type="submit" disabled={isPending} className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 disabled:opacity-50">
-            {isPending ? 'Добавление...' : 'Добавить запись'}
-          </button>
-
-          <h2 className="text-2xl font-semibold mt-8 mb-4">Мои записи</h2>
-          {entries.length > 0 ? (
-            <table className="w-full border-collapse border border-gray-300">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="border p-2">Дата</th>
-                  <th className="border p-2">Вес (кг)</th>
-                  <th className="border p-2">Калории (in/out)</th>
-                  <th className="border p-2">Шаги</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((e: any, i: number) => (
-                  <tr key={i}>
-                    <td className="border p-2">{new Date(Number(e.date) * 1000).toLocaleDateString()}</td>
-                    <td className="border p-2">{e.weight.toString()}</td>
-                    <td className="border p-2">{e.caloriesIn.toString()}/{e.caloriesOut.toString()}</td>
-                    <td className="border p-2">{e.steps.toString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>Нет записей</p>
-          )}
-        </form>
-      ) : (
-        <p>Подключи кошелёк</p>
-      )}
+      <button onClick={addEntry}>Добавить запись</button>
     </div>
-  )
+  );
 }
