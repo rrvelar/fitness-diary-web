@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const hash = await walletClient.deployContract({
   abi,
-  bytecode: bytecode as `0x${string}`,
+  bytecode: bytecodeJson.bytecode as `0x${string}`,
   args: [],
 });
 
