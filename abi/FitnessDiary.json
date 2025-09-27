@@ -51,9 +51,13 @@
     "type": "function"
   },
   {
-    "inputs": [{ "internalType": "address", "name": "user", "type": "address" }],
+    "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" }
+    ],
     "name": "getDates",
-    "outputs": [{ "internalType": "uint32[]", "name": "", "type": "uint32[]" }],
+    "outputs": [
+      { "internalType": "uint32[]", "name": "", "type": "uint32[]" }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
