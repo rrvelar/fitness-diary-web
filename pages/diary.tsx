@@ -31,18 +31,23 @@ export default function DiaryPage() {
   const addEntry = async () => {
     if (!isConnected) return alert('Подключи кошелёк')
 
-    await writeContractAsync({
-      address: process.env.NEXT_PUBLIC_DIARY_ADDRESS as `0x${string}`,
-      abi,
-      functionName: 'addEntry',
-      args: [
-        BigInt(Number(weight)),
-        BigInt(Number(calIn)),
-        BigInt(Number(calOut)),
-        BigInt(Number(steps))
-      ],
-    })
-    refetch()
+    try {
+      await writeContractAsync({
+        address: process.env.NEXT_PUBLIC_DIARY_ADDRESS as `0x${string}`,
+        abi,
+        functionName: 'addEntry', // ✅ строго это имя!
+        args: [
+          BigInt(Number(weight)),
+          BigInt(Number(calIn)),
+          BigInt(Number(calOut)),
+          BigInt(Number(steps))
+        ],
+      })
+      refetch()
+    } catch (err) {
+      console.error('[DEBUG] Ошибка при вызове addEntry:', err)
+      alert('Ошибка при добавлении записи, смотри консоль')
+    }
   }
 
   return (
