@@ -10,6 +10,7 @@ export default function DiaryPage() {
   const [steps, setSteps] = useState('')
 
   const { writeContractAsync } = useWriteContract()
+console.log('ABI functions loaded:', abi.map((f: any) => f.name));
   const { data, refetch } = useReadContract({
     address: process.env.NEXT_PUBLIC_DIARY_ADDRESS as `0x${string}`,
     abi,
