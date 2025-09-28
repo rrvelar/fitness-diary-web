@@ -25,28 +25,26 @@ export default function EntriesPage() {
 
       try {
         // 1. получаем список дат
-        const dates: bigint[] = await readContract(config, {
+        const dates = (await readContract(config, {
           address: CONTRACT_ADDRESS,
           abi,
           functionName: "getDates",
           args: [address],
-        })
+        })) as bigint[]
 
-        // 2. для каждой даты получаем запись
-        const results: Entry[] = []
-        for (const date of dates) {
-          const entry = await readContract(config, {
-            address: CONTRACT_ADDRESS,
-            abi,
-            functionName: "getEntry",
-            args: [address, date],
+        // 2. параллельные запросы записей по датам
+        const results = await Promise.all(
+          dates.map(async (date) => {
+            const [weight, note] = (await readContract(config, {
+              address: CONTRACT_ADDRESS,
+              abi,
+              functionName: "getEntry",
+              args: [address, date],
+            })) as [bigint, string]
+
+            return { date, weight, note }
           })
-          results.push({
-            date,
-            weight: entry[0],
-            note: entry[1],
-          })
-        }
+        )
 
         setEntries(results)
       } catch (err) {
