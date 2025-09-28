@@ -1,77 +1,64 @@
+// pages/entries.tsx
 import { useEffect, useState } from "react"
 import { useAccount } from "wagmi"
 import { readContract } from "wagmi/actions"
 import { config } from "../lib/wagmi"
+
 import abi from "../abi/FitnessDiary.json"
-import CONTRACT from "../abi/FitnessDiary.address.json" assert { type: "json" }
-
-// если JSON в формате { "address": "0x..." }
-const CONTRACT_ADDRESS = (CONTRACT as { address: string }).address as `0x${string}`
-
-type Entry = {
-  date: bigint
-  weightGrams: bigint
-  caloriesIn: bigint
-  caloriesOut: bigint
-  steps: bigint
-  exists: boolean
-}
+import CONTRACT_ADDRESS from "../abi/FitnessDiary.address.json" assert { type: "json" }
 
 export default function EntriesPage() {
-  const { address } = useAccount()
-  const [entries, setEntries] = useState<Entry[]>([])
-  const [loading, setLoading] = useState(false)
+  const { address, isConnected } = useAccount()
+  const [entries, setEntries] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!address) return
-    const load = async () => {
-      setLoading(true)
+    if (!isConnected || !address) return
+
+    async function loadEntries() {
       try {
-        // 1. получаем даты
-        const dates: bigint[] = await readContract(config, {
-          address: CONTRACT_ADDRESS,
+        setLoading(true)
+
+        // ⚡️ вызов getEntries с 3 параметрами: (user, offset, limit)
+        const result = await readContract(config, {
+          address: CONTRACT_ADDRESS as `0x${string}`,
           abi,
-          functionName: "getDates",
-          args: [address],
-        }) as bigint[]
+          functionName: "getEntries",
+          args: [address, BigInt(0), BigInt(50)], // offset=0, limit=50
+        })
 
-        // ограничим 50, если много
-        const sliced = dates.slice(0, 50)
-
-        // 2. получаем каждую запись
-        const items: Entry[] = []
-        for (const d of sliced) {
-          const entry = await readContract(config, {
-            address: CONTRACT_ADDRESS,
-            abi,
-            functionName: "getEntry",
-            args: [address, d],
-          }) as Entry
-          if (entry.exists) items.push(entry)
-        }
-        setEntries(items)
+        console.log("getEntries result:", result)
+        setEntries(result as any[])
       } catch (err) {
         console.error("Ошибка загрузки:", err)
+        setEntries([])
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
-    load()
-  }, [address])
+
+    loadEntries()
+  }, [isConnected, address])
 
   return (
-    <main style={{ maxWidth: 720, margin: "40px auto", fontFamily: "system-ui" }}>
+    <div style={{ padding: "2rem" }}>
       <h1>Мои записи</h1>
+      <p>Адрес: {address}</p>
+
       {loading && <p>Загрузка...</p>}
+
       {!loading && entries.length === 0 && <p>Нет записей</p>}
-      <ul>
-        {entries.map((e) => (
-          <li key={e.date.toString()}>
-            <b>{e.date.toString()}</b> — вес {Number(e.weightGrams) / 1000} кг,  
-            калории: +{e.caloriesIn.toString()} / -{e.caloriesOut.toString()},  
-            шаги: {e.steps.toString()}
-          </li>
-        ))}
-      </ul>
-    </main>
+
+      {entries.length > 0 && (
+        <ul>
+          {entries.map((entry, idx) => (
+            <li key={idx}>
+              📅 {new Date(Number(entry.date) * 1000).toLocaleDateString()} —{" "}
+              {entry.weight.toString()} кг
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }
