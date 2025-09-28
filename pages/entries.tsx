@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react"
-import { useAccount, useConfig } from "wagmi"
+import { useAccount } from "wagmi"
 import { readContract } from "wagmi/actions"
 import abi from "../abi/FitnessDiary.json"
-import CONTRACT_ADDRESS from "../abi/FitnessDiary.address.json"
+import CONTRACT from "../abi/FitnessDiary.address.json" assert { type: "json" }
+
+// если JSON в формате { "address": "0x..." }
+const CONTRACT_ADDRESS = (CONTRACT as { address: string }).address as `0x${string}`
 
 type Entry = {
   date: bigint
@@ -15,61 +18,59 @@ type Entry = {
 
 export default function EntriesPage() {
   const { address } = useAccount()
-  const config = useConfig()
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!address) return
-
     const load = async () => {
       setLoading(true)
       try {
-        // 1. получаем список дат (берём первые 50 для примера)
-        const dates = (await readContract(config, {
-          address: CONTRACT_ADDRESS as `0x${string}`,
+        // 1. получаем даты (берём первые 50 для примера)
+        const dates: bigint[] = await readContract({
+          address: CONTRACT_ADDRESS,
           abi,
           functionName: "getDates",
-          args: [address, BigInt(0), BigInt(50)],
-        })) as bigint[]
+          args: [address],
+        }) as bigint[]
+
+        // ограничим 50, если много
+        const sliced = dates.slice(0, 50)
 
         // 2. получаем каждую запись
         const items: Entry[] = []
-        for (const d of dates) {
-          const e = (await readContract(config, {
-            address: CONTRACT_ADDRESS as `0x${string}`,
+        for (const d of sliced) {
+          const entry = await readContract({
+            address: CONTRACT_ADDRESS,
             abi,
             functionName: "getEntry",
             args: [address, d],
-          })) as Entry
-          if (e.exists) items.push(e)
+          }) as Entry
+          if (entry.exists) items.push(entry)
         }
-
         setEntries(items)
       } catch (err) {
-        console.error("Ошибка загрузки записей:", err)
-      } finally {
-        setLoading(false)
+        console.error("Ошибка загрузки:", err)
       }
+      setLoading(false)
     }
-
     load()
-  }, [address, config])
+  }, [address])
 
   return (
-    <div style={{ padding: 20 }}>
+    <main style={{ maxWidth: 720, margin: "40px auto", fontFamily: "system-ui" }}>
       <h1>Мои записи</h1>
       {loading && <p>Загрузка...</p>}
       {!loading && entries.length === 0 && <p>Нет записей</p>}
       <ul>
         {entries.map((e) => (
           <li key={e.date.toString()}>
-            <b>{e.date.toString()}</b> — Вес: {e.weightGrams.toString()} г,
-            Калории: {e.caloriesIn.toString()} / {e.caloriesOut.toString()},
-            Шаги: {e.steps.toString()}
+            <b>{e.date.toString()}</b> — вес {Number(e.weightGrams) / 1000} кг,  
+            калории: +{e.caloriesIn.toString()} / -{e.caloriesOut.toString()},  
+            шаги: {e.steps.toString()}
           </li>
         ))}
       </ul>
-    </div>
+    </main>
   )
 }
