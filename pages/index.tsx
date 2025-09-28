@@ -1,23 +1,7 @@
 import { useState } from "react"
 import { useAccount, useWriteContract } from "wagmi"
 import abi from "../abi/FitnessDiary.json"
-
-import Link from "next/link";
-
-export default function Home() {
-  return (
-    <main style={{maxWidth:720, margin:"40px auto", fontFamily:"system-ui"}}>
-      <h1 style={{fontSize:32, fontWeight:700}}>Fitness Diary</h1>
-      <ul>
-        <li><Link href="/log">Добавить / обновить запись</Link></li>
-        <li><Link href="/entries">Мои записи</Link></li>
-        <li><Link href="/stats">Графики</Link></li>
-        <li><Link href="/test">Тестовая страница</Link></li>
-      </ul>
-    </main>
-  );
-}
-
+import Link from "next/link"
 
 export default function HomePage() {
   const { address, isConnected } = useAccount()
@@ -56,36 +40,46 @@ export default function HomePage() {
   }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Fitness Diary</h1>
+    <main style={{ maxWidth: 720, margin: "40px auto", fontFamily: "system-ui" }}>
+      <h1 style={{ fontSize: 32, fontWeight: 700 }}>Fitness Diary</h1>
+      <ul>
+        <li><Link href="/log">Добавить / обновить запись</Link></li>
+        <li><Link href="/entries">Мои записи</Link></li>
+        <li><Link href="/stats">Графики</Link></li>
+        <li><Link href="/test">Тестовая страница</Link></li>
+      </ul>
 
-      <input
-        placeholder="Дата (YYYYMMDD)"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
-      />
-      <input
-        placeholder="Вес (г)"
-        value={weight}
-        onChange={(e) => setWeight(e.target.value)}
-      />
-      <input
-        placeholder="Калории потреблено"
-        value={calIn}
-        onChange={(e) => setCalIn(e.target.value)}
-      />
-      <input
-        placeholder="Калории сожжено"
-        value={calOut}
-        onChange={(e) => setCalOut(e.target.value)}
-      />
-      <input
-        placeholder="Шаги"
-        value={steps}
-        onChange={(e) => setSteps(e.target.value)}
-      />
+      <div style={{ marginTop: 40 }}>
+        <h2>Быстрое добавление записи</h2>
 
-      <button onClick={addEntry}>Добавить запись</button>
-    </div>
+        <input
+          placeholder="Дата (YYYYMMDD)"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+        <input
+          placeholder="Вес (г)"
+          value={weight}
+          onChange={(e) => setWeight(e.target.value)}
+        />
+        <input
+          placeholder="Калории потреблено"
+          value={calIn}
+          onChange={(e) => setCalIn(e.target.value)}
+        />
+        <input
+          placeholder="Калории сожжено"
+          value={calOut}
+          onChange={(e) => setCalOut(e.target.value)}
+        />
+        <input
+          placeholder="Шаги"
+          value={steps}
+          onChange={(e) => setSteps(e.target.value)}
+        />
+
+        <button onClick={addEntry}>Добавить запись</button>
+      </div>
+    </main>
   )
 }
