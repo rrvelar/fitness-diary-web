@@ -1,58 +1,77 @@
+// pages/test.tsx
 import { useState } from "react";
 import { ethers } from "ethers";
 import abi from "../abi/FitnessDiary.json";
-import address from "../abi/FitnessDiary.address.json"; // строка с адресом контракта
+import addressJson from "../abi/FitnessDiary.address.json";
 
-export default function TestPage() {
+const contractAddress = addressJson.address;
+
+export default function Test() {
   const [date, setDate] = useState("");
   const [weight, setWeight] = useState("");
   const [caloriesIn, setCaloriesIn] = useState("");
   const [caloriesOut, setCaloriesOut] = useState("");
   const [steps, setSteps] = useState("");
-  const [entry, setEntry] = useState<any>(null);
 
-  async function getContract() {
+  const connectContract = async () => {
     if (!window.ethereum) throw new Error("MetaMask not found");
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
-    return new ethers.Contract(address, abi, signer);
-  }
+    return new ethers.Contract(contractAddress, abi, signer);
+  };
 
-  async function logEntry() {
+  const logEntry = async () => {
     try {
-      const contract = await getContract();
+      if (!date || !weight || !caloriesIn || !caloriesOut || !steps) {
+        alert("Заполни все поля!");
+        return;
+      }
+
+      const contract = await connectContract();
       const tx = await contract.logEntry(
-        parseInt(date),
-        parseInt(weight),
-        parseInt(caloriesIn),
-        parseInt(caloriesOut),
-        parseInt(steps)
+        Number(date),
+        Number(weight),
+        Number(caloriesIn),
+        Number(caloriesOut),
+        Number(steps)
       );
       await tx.wait();
       alert("✅ Entry logged!");
     } catch (err: any) {
       alert("Ошибка: " + err.message);
-      console.error(err);
     }
-  }
+  };
 
-  async function getEntry() {
+  const getEntry = async () => {
     try {
-      const contract = await getContract();
-      const signer = await (new ethers.BrowserProvider(window.ethereum)).getSigner();
-      const user = await signer.getAddress();
-      const data = await contract.getEntry(user, parseInt(date));
-      setEntry(data);
+      if (!date) {
+        alert("Введите дату!");
+        return;
+      }
+
+      const contract = await connectContract();
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      const account = accounts[0];
+
+      const entry = await contract.getEntry(account, Number(date));
+
+      // Красиво форматируем вывод
+      alert(`
+📅 Date: ${entry.date}
+⚖️ Weight: ${entry.weightGrams} g
+🔥 Calories In: ${entry.caloriesIn}
+🏃 Calories Out: ${entry.caloriesOut}
+👟 Steps: ${entry.steps}
+✅ Exists: ${entry.exists}
+      `);
     } catch (err: any) {
       alert("Ошибка: " + err.message);
-      console.error(err);
     }
-  }
+  };
 
   return (
     <div style={{ padding: "20px" }}>
       <h1>Fitness Diary Test</h1>
-
       <div>
         <label>Дата (YYYYMMDD): </label>
         <input value={date} onChange={(e) => setDate(e.target.value)} />
@@ -73,16 +92,8 @@ export default function TestPage() {
         <label>Шаги: </label>
         <input value={steps} onChange={(e) => setSteps(e.target.value)} />
       </div>
-
       <button onClick={logEntry}>Log Entry</button>
       <button onClick={getEntry}>Get Entry</button>
-
-      {entry && (
-        <div style={{ marginTop: "20px" }}>
-          <h3>📖 Данные из блокчейна:</h3>
-          <pre>{JSON.stringify(entry, null, 2)}</pre>
-        </div>
-      )}
     </div>
   );
 }
