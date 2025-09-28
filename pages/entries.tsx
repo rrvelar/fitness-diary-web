@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
-import { useAccount } from "../lib/wagmi"
-import { readContract } from "../lib/wagmi/actions"
+import { useAccount } from "wagmi"
+import { readContract } from "wagmi/actions"
 import { config } from "../lib/wagmi"
 import abi from "../abi/FitnessDiary.json"
 import CONTRACT from "../abi/FitnessDiary.address.json" assert { type: "json" }
