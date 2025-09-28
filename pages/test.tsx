@@ -1,11 +1,7 @@
-"use client";
-
 import { useState } from "react";
 import { ethers } from "ethers";
-
-// Импортируем ABI и адрес контракта
 import abi from "../abi/FitnessDiary.json";
-import address from "../abi/FitnessDiary.address.json";
+import address from "../abi/FitnessDiary.address.json"; // строка с адресом контракта
 
 export default function TestPage() {
   const [date, setDate] = useState("");
@@ -13,9 +9,8 @@ export default function TestPage() {
   const [caloriesIn, setCaloriesIn] = useState("");
   const [caloriesOut, setCaloriesOut] = useState("");
   const [steps, setSteps] = useState("");
-  const [result, setResult] = useState("");
+  const [entry, setEntry] = useState<any>(null);
 
-  // Подключение к контракту
   async function getContract() {
     if (!window.ethereum) throw new Error("MetaMask not found");
     const provider = new ethers.BrowserProvider(window.ethereum);
@@ -23,34 +18,34 @@ export default function TestPage() {
     return new ethers.Contract(address, abi, signer);
   }
 
-  // Логируем запись
   async function logEntry() {
     try {
       const contract = await getContract();
       const tx = await contract.logEntry(
-        Number(date),
-        Number(weight),
-        Number(caloriesIn),
-        Number(caloriesOut),
-        Number(steps)
+        parseInt(date),
+        parseInt(weight),
+        parseInt(caloriesIn),
+        parseInt(caloriesOut),
+        parseInt(steps)
       );
       await tx.wait();
-      alert("Запись успешно добавлена!");
+      alert("✅ Entry logged!");
     } catch (err: any) {
       alert("Ошибка: " + err.message);
+      console.error(err);
     }
   }
 
-  // Получаем запись
   async function getEntry() {
     try {
       const contract = await getContract();
       const signer = await (new ethers.BrowserProvider(window.ethereum)).getSigner();
       const user = await signer.getAddress();
-      const entry = await contract.getEntry(user, Number(date));
-      setResult(JSON.stringify(entry));
+      const data = await contract.getEntry(user, parseInt(date));
+      setEntry(data);
     } catch (err: any) {
       alert("Ошибка: " + err.message);
+      console.error(err);
     }
   }
 
@@ -82,10 +77,10 @@ export default function TestPage() {
       <button onClick={logEntry}>Log Entry</button>
       <button onClick={getEntry}>Get Entry</button>
 
-      {result && (
-        <div>
-          <h3>Результат:</h3>
-          <pre>{result}</pre>
+      {entry && (
+        <div style={{ marginTop: "20px" }}>
+          <h3>📖 Данные из блокчейна:</h3>
+          <pre>{JSON.stringify(entry, null, 2)}</pre>
         </div>
       )}
     </div>
