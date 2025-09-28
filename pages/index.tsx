@@ -2,6 +2,23 @@ import { useState } from "react"
 import { useAccount, useWriteContract } from "wagmi"
 import abi from "../abi/FitnessDiary.json"
 
+import Link from "next/link";
+
+export default function Home() {
+  return (
+    <main style={{maxWidth:720, margin:"40px auto", fontFamily:"system-ui"}}>
+      <h1 style={{fontSize:32, fontWeight:700}}>Fitness Diary</h1>
+      <ul>
+        <li><Link href="/log">Добавить / обновить запись</Link></li>
+        <li><Link href="/entries">Мои записи</Link></li>
+        <li><Link href="/stats">Графики</Link></li>
+        <li><Link href="/test">Тестовая страница</Link></li>
+      </ul>
+    </main>
+  );
+}
+
+
 export default function HomePage() {
   const { address, isConnected } = useAccount()
   const { writeContractAsync } = useWriteContract()
