@@ -29,23 +29,23 @@ export default function EntriesPage() {
     setLoading(true)
 
     try {
-      // 1. получаем даты (берём первые 50 для примера)
-      const { result: dates } = await readContract({
+      // 1. получаем даты
+      const dates: bigint[] = await readContract({
         address: CONTRACT_ADDRESS,
         abi,
         functionName: "getDates",
         args: [address, BigInt(0), BigInt(50)],
-      }) as { result: bigint[] }
+      })
 
       const results: Entry[] = []
 
       for (const d of dates) {
-        const { result: e } = await readContract({
+        const e: Entry = await readContract({
           address: CONTRACT_ADDRESS,
           abi,
           functionName: "getEntry",
           args: [address, d],
-        }) as { result: Entry }
+        })
 
         if (e.exists) results.push(e)
       }
