@@ -3,7 +3,7 @@ import { useAccount } from "wagmi"
 import { readContract } from "wagmi/actions"
 import { config } from "../lib/wagmi"
 import abi from "../abi/FitnessDiary.json"
-import rawAddress from "../abi/FitnessDiary.address.json" assert { type: "json" }
+import contractAddressJson from "../abi/FitnessDiary.address.json" assert { type: "json" }
 import {
   LineChart,
   Line,
@@ -15,86 +15,89 @@ import {
   Legend,
 } from "recharts"
 
-// Адрес контракта
-const CONTRACT_ADDRESS = (
-  typeof rawAddress === "string" ? rawAddress : rawAddress.address
-) as `0x${string}`
+const CONTRACT_ADDRESS = contractAddressJson.address as `0x${string}`
 
-type Entry = {
-  date: bigint
-  weightGrams: bigint
-  caloriesIn: bigint
-  caloriesOut: bigint
-  steps: bigint
-  netCalories: bigint
+type Point = {
+  date: string
+  weight: number
+  in: number
+  out: number
+  steps: number
 }
 
 export default function StatsPage() {
   const { address, isConnected } = useAccount()
-  const [data, setData] = useState<any[]>([])
+  const [data, setData] = useState<Point[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    const load = async () => {
-      if (!isConnected || !address) return
-      setLoading(true)
+    if (!isConnected || !address) return
+
+    async function loadStats() {
       try {
-        const result = await readContract(config, {
+        setLoading(true)
+
+        // 1. Получаем даты (например, первые 30)
+        const dates = (await readContract(config, {
           address: CONTRACT_ADDRESS,
           abi,
-          functionName: "getEntries",
-          args: [address, BigInt(0), BigInt(50)],
-        })
+          functionName: "getDates",
+          args: [address, BigInt(0), BigInt(30)],
+        })) as bigint[]
 
-        const entries = result as Entry[]
+        // 2. Получаем по каждой дате полную запись
+        const points: Point[] = []
+        for (const d of dates) {
+          const entry: any = await readContract(config, {
+            address: CONTRACT_ADDRESS,
+            abi,
+            functionName: "getEntry",
+            args: [address, Number(d)],
+          })
+          if (entry.exists) {
+            points.push({
+              date: new Date(Number(entry.date) * 1000)
+                .toISOString()
+                .split("T")[0],
+              weight: Number(entry.weightGrams) / 1000,
+              in: Number(entry.caloriesIn),
+              out: Number(entry.caloriesOut),
+              steps: Number(entry.steps),
+            })
+          }
+        }
 
-        // Преобразуем в формат для recharts
-        const chartData = entries.map((e) => ({
-          date: e.date.toString(),
-          weight: Number(e.weightGrams) / 1000, // кг
-          calIn: Number(e.caloriesIn),
-          calOut: Number(e.caloriesOut),
-          steps: Number(e.steps),
-          net: Number(e.netCalories),
-        }))
-
-        setData(chartData)
+        setData(points.reverse()) // последние даты внизу → наверх
       } catch (err) {
-        console.error("Ошибка загрузки данных:", err)
+        console.error("Ошибка при загрузке статистики:", err)
       } finally {
         setLoading(false)
       }
     }
 
-    load()
+    loadStats()
   }, [isConnected, address])
 
   return (
-    <main style={{ maxWidth: 900, margin: "40px auto", fontFamily: "system-ui" }}>
-      <h1 style={{ fontSize: 28, fontWeight: 700 }}>Графики</h1>
-
-      {!isConnected && <p>Подключите кошелёк</p>}
+    <div style={{ width: "100%", height: 400 }}>
+      <h1>📊 Статистика</h1>
       {loading && <p>Загрузка...</p>}
-      {data.length === 0 && !loading && <p>Нет данных для графиков</p>}
-
+      {!loading && data.length === 0 && <p>Нет данных</p>}
       {data.length > 0 && (
-        <div style={{ height: 400 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="weight" stroke="#8884d8" name="Вес (кг)" />
-              <Line type="monotone" dataKey="calIn" stroke="#82ca9d" name="Калории потреблено" />
-              <Line type="monotone" dataKey="calOut" stroke="#ff7300" name="Калории сожжено" />
-              <Line type="monotone" dataKey="steps" stroke="#387908" name="Шаги" />
-              <Line type="monotone" dataKey="net" stroke="#ff0000" name="Баланс калорий" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+        <ResponsiveContainer width="100%" height={400}>
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="weight" stroke="#8884d8" />
+            <Line type="monotone" dataKey="in" stroke="#82ca9d" />
+            <Line type="monotone" dataKey="out" stroke="#ff7300" />
+            <Line type="monotone" dataKey="steps" stroke="#387908" />
+          </LineChart>
+        </ResponsiveContainer>
       )}
-    </main>
+    </div>
   )
 }
