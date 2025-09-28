@@ -1,63 +1,95 @@
-import { useState } from "react"
-import { ethers } from "ethers"
+import { useState } from "react";
+import { ethers } from "ethers";
+import abi from "../abi/FitnessDiary.json";
 
-// ABI и адрес контракта
-import abi from "../abi/FitnessDiary.json"
-import contractAddress from "../abi/FitnessDiary.address.json"
+const CONTRACT_ADDRESS = "ТВОЙ_АДРЕС_КОНТРАКТА"; // вставь адрес из Remix-деплоя
 
 export default function TestPage() {
-  const [status, setStatus] = useState("")
+  const [date, setDate] = useState("");
+  const [weight, setWeight] = useState("");
+  const [caloriesIn, setCaloriesIn] = useState("");
+  const [caloriesOut, setCaloriesOut] = useState("");
+  const [steps, setSteps] = useState("");
+  const [entry, setEntry] = useState<any>(null);
 
-  async function handleLogEntry() {
+  async function logEntry() {
+    if (!window.ethereum) return alert("MetaMask не найден");
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, signer);
+
     try {
-      if (!window.ethereum) {
-        setStatus("❌ Установи MetaMask")
-        return
-      }
-
-      // Подключаемся к Metamask
-      const provider = new ethers.BrowserProvider(window.ethereum)
-      const signer = await provider.getSigner()
-
-      // Создаём объект контракта
-      const contract = new ethers.Contract(contractAddress.address, abi, signer)
-
-      setStatus("📤 Отправляем транзакцию...")
-
-      // Вызов функции logEntry с тестовыми данными
       const tx = await contract.logEntry(
-        20250928, // date (YYYYMMDD)
-        88000,    // weightGrams
-        2500,     // caloriesIn
-        3000,     // caloriesOut
-        20000     // steps
-      )
-
-      setStatus("⏳ Ждём подтверждения...")
-
-      await tx.wait()
-
-      setStatus("✅ Запись успешно добавлена в контракт!")
+        Number(date),
+        Number(weight),
+        Number(caloriesIn),
+        Number(caloriesOut),
+        Number(steps)
+      );
+      await tx.wait();
+      alert("Запись успешно добавлена!");
     } catch (err: any) {
-      console.error(err)
-      setStatus("❌ Ошибка: " + (err.message || "см. консоль"))
+      console.error(err);
+      alert("Ошибка: " + (err.message || err));
+    }
+  }
+
+  async function getEntry() {
+    if (!window.ethereum) return alert("MetaMask не найден");
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, signer);
+
+    try {
+      const user = await signer.getAddress();
+      const result = await contract.getEntry(user, Number(date));
+      setEntry(result);
+    } catch (err: any) {
+      console.error(err);
+      alert("Ошибка: " + (err.message || err));
     }
   }
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1>Тест взаимодействия с контрактом</h1>
-      <button
-        onClick={handleLogEntry}
-        style={{
-          padding: "1rem 2rem",
-          fontSize: "1.2rem",
-          cursor: "pointer"
-        }}
-      >
-        Добавить тестовую запись
-      </button>
-      <p>{status}</p>
+    <div style={{ padding: 20 }}>
+      <h1>Fitness Diary Test</h1>
+
+      <div>
+        <label>Дата (YYYYMMDD): </label>
+        <input value={date} onChange={e => setDate(e.target.value)} />
+      </div>
+
+      <div>
+        <label>Вес (граммы): </label>
+        <input value={weight} onChange={e => setWeight(e.target.value)} />
+      </div>
+
+      <div>
+        <label>Калории In: </label>
+        <input value={caloriesIn} onChange={e => setCaloriesIn(e.target.value)} />
+      </div>
+
+      <div>
+        <label>Калории Out: </label>
+        <input value={caloriesOut} onChange={e => setCaloriesOut(e.target.value)} />
+      </div>
+
+      <div>
+        <label>Шаги: </label>
+        <input value={steps} onChange={e => setSteps(e.target.value)} />
+      </div>
+
+      <button onClick={logEntry} style={{ marginTop: 10 }}>Log Entry</button>
+      <button onClick={getEntry} style={{ marginTop: 10, marginLeft: 10 }}>Get Entry</button>
+
+      {entry && (
+        <div style={{ marginTop: 20 }}>
+          <h2>Запись:</h2>
+          <pre>{JSON.stringify(entry, null, 2)}</pre>
+        </div>
+      )}
     </div>
-  )
+  );
 }
