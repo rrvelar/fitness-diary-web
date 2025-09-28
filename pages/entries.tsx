@@ -2,21 +2,15 @@ import { useEffect, useState } from "react"
 import { useAccount } from "wagmi"
 import { readContract } from "wagmi/actions"
 import { config } from "../lib/wagmi"
-import abi from "../abi/FitnessDiary.json"
-import rawAddress from "../abi/FitnessDiary.address.json" assert { type: "json" }
 
-// Универсальная обёртка: строка или { address }
-const CONTRACT_ADDRESS = (
-  typeof rawAddress === "string" ? rawAddress : rawAddress.address
-) as `0x${string}`
+import abi from "../abi/FitnessDiary.json"
+import contractAddressJson from "../abi/FitnessDiary.address.json" assert { type: "json" }
+const CONTRACT_ADDRESS = contractAddressJson.address as `0x${string}`
 
 type Entry = {
   date: bigint
-  weightGrams: bigint
-  caloriesIn: bigint
-  caloriesOut: bigint
-  steps: bigint
-  netCalories: bigint
+  weight: bigint
+  note: string
 }
 
 export default function EntriesPage() {
@@ -28,16 +22,33 @@ export default function EntriesPage() {
     const loadEntries = async () => {
       if (!isConnected || !address) return
       setLoading(true)
+
       try {
-        // ⚡️ читаем getEntries(user, offset, limit)
-        const result = await readContract(config, {
+        // 1. получаем список дат
+        const dates: bigint[] = await readContract(config, {
           address: CONTRACT_ADDRESS,
           abi,
-          functionName: "getEntries",
-          args: [address, BigInt(0), BigInt(50)], // offset=0, limit=50
+          functionName: "getDates",
+          args: [address],
         })
 
-        setEntries(result as Entry[])
+        // 2. для каждой даты получаем запись
+        const results: Entry[] = []
+        for (const date of dates) {
+          const entry = await readContract(config, {
+            address: CONTRACT_ADDRESS,
+            abi,
+            functionName: "getEntry",
+            args: [address, date],
+          })
+          results.push({
+            date,
+            weight: entry[0],
+            note: entry[1],
+          })
+        }
+
+        setEntries(results)
       } catch (err) {
         console.error("Ошибка при загрузке записей:", err)
       } finally {
@@ -46,27 +57,21 @@ export default function EntriesPage() {
     }
 
     loadEntries()
-  }, [isConnected, address])
+  }, [address, isConnected])
 
   return (
-    <main style={{ maxWidth: 720, margin: "40px auto", fontFamily: "system-ui" }}>
-      <h1 style={{ fontSize: 28, fontWeight: 700 }}>Мои записи</h1>
-
-      {!isConnected && <p>Подключите кошелёк</p>}
+    <div style={{ padding: 20 }}>
+      <h1>Мои записи</h1>
       {loading && <p>Загрузка...</p>}
-
-      {entries.length === 0 && !loading && <p>Нет записей</p>}
-
-      <ul style={{ marginTop: 20 }}>
-        {entries.map((e, idx) => (
-          <li key={idx} style={{ marginBottom: 10 }}>
-            <b>{e.date.toString()}</b> — вес: {(Number(e.weightGrams) / 1000).toFixed(1)} кг,  
-            калории: {e.caloriesIn.toString()} in / {e.caloriesOut.toString()} out,  
-            шаги: {e.steps.toString()},  
-            баланс: {e.netCalories.toString()}
+      {!loading && entries.length === 0 && <p>Нет записей</p>}
+      <ul>
+        {entries.map((e) => (
+          <li key={e.date.toString()}>
+            <strong>{new Date(Number(e.date) * 1000).toLocaleDateString()}</strong> —{" "}
+            {e.weight.toString()} кг, заметка: {e.note}
           </li>
         ))}
       </ul>
-    </main>
+    </div>
   )
 }
