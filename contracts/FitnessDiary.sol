@@ -8,15 +8,13 @@ contract FitnessDiary {
         int32 caloriesIn;     // потреблено
         int32 caloriesOut;    // сожжено
         uint32 steps;         // шаги
-        int32 netCalories;    // out - in
         bool exists;
     }
 
     mapping(address => mapping(uint32 => Entry)) private entries; // user → date → entry
     mapping(address => uint32[]) private userDates;               // user → list of dates
 
-    event EntryLogged(address indexed user, uint32 indexed date, Entry entry);
-    event EntryUpdated(address indexed user, uint32 indexed date, Entry entry);
+    event EntryAction(address indexed user, uint32 indexed date, string action);
 
     /// @notice Добавить новую запись
     function logEntry(
@@ -26,22 +24,11 @@ contract FitnessDiary {
         int32 caloriesOut,
         uint32 steps
     ) external {
-        require(!entries[msg.sender][date].exists, "Entry already exists for this date");
-        int32 netCalories = caloriesOut - caloriesIn;
-
-        entries[msg.sender][date] = Entry(
-            date,
-            weightGrams,
-            caloriesIn,
-            caloriesOut,
-            steps,
-            netCalories,
-            true
-        );
-
+        require(!entries[msg.sender][date].exists, "Entry exists");
+        entries[msg.sender][date] = Entry(date, weightGrams, caloriesIn, caloriesOut, steps, true);
         userDates[msg.sender].push(date);
 
-        emit EntryLogged(msg.sender, date, entries[msg.sender][date]);
+        emit EntryAction(msg.sender, date, "created");
     }
 
     /// @notice Обновить запись за конкретную дату
@@ -52,21 +39,18 @@ contract FitnessDiary {
         int32 caloriesOut,
         uint32 steps
     ) external {
-        require(entries[msg.sender][date].exists, "No entry for this date");
+        require(entries[msg.sender][date].exists, "No entry");
+        entries[msg.sender][date] = Entry(date, weightGrams, caloriesIn, caloriesOut, steps, true);
 
-        int32 netCalories = caloriesOut - caloriesIn;
+        emit EntryAction(msg.sender, date, "updated");
+    }
 
-        entries[msg.sender][date] = Entry(
-            date,
-            weightGrams,
-            caloriesIn,
-            caloriesOut,
-            steps,
-            netCalories,
-            true
-        );
+    /// @notice "Удалить" запись (exists=false)
+    function deleteEntry(uint32 date) external {
+        require(entries[msg.sender][date].exists, "No entry");
+        entries[msg.sender][date].exists = false;
 
-        emit EntryUpdated(msg.sender, date, entries[msg.sender][date]);
+        emit EntryAction(msg.sender, date, "deleted");
     }
 
     /// @notice Получить запись по дате
@@ -74,8 +58,27 @@ contract FitnessDiary {
         return entries[user][date];
     }
 
-    /// @notice Получить список всех дат для пользователя
-    function getDates(address user) external view returns (uint32[] memory) {
-        return userDates[user];
+    /// @notice Получить даты с пагинацией
+    function getDates(address user, uint256 startIndex, uint256 count) external view returns (uint32[] memory) {
+        uint32[] memory allDates = userDates[user];
+        require(startIndex + count <= allDates.length, "Out of bounds");
+
+        uint32[] memory result = new uint32[](count);
+        for (uint256 i = 0; i < count; i++) {
+            result[i] = allDates[startIndex + i];
+        }
+        return result;
+    }
+
+    /// @notice Посчитать netCalories на лету
+    function getNetCalories(address user, uint32 date) external view returns (int32) {
+        Entry memory e = entries[user][date];
+        require(e.exists, "No entry");
+        return e.caloriesOut - e.caloriesIn;
+    }
+
+    /// @notice Сколько всего дат у пользователя (для фронта, чтобы делать пагинацию)
+    function getDatesCount(address user) external view returns (uint256) {
+        return userDates[user].length;
     }
 }
