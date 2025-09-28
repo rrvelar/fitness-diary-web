@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useAccount } from "wagmi"
 import { readContract } from "wagmi/actions"
+import { config } from "../wagmi"   // ⚡️ импортируй config
 import abi from "../abi/FitnessDiary.json"
 import CONTRACT from "../abi/FitnessDiary.address.json" assert { type: "json" }
 
@@ -26,8 +27,8 @@ export default function EntriesPage() {
     const load = async () => {
       setLoading(true)
       try {
-        // 1. получаем даты (берём первые 50 для примера)
-        const dates: bigint[] = await readContract({
+        // 1. получаем даты
+        const dates: bigint[] = await readContract(config, {
           address: CONTRACT_ADDRESS,
           abi,
           functionName: "getDates",
@@ -40,7 +41,7 @@ export default function EntriesPage() {
         // 2. получаем каждую запись
         const items: Entry[] = []
         for (const d of sliced) {
-          const entry = await readContract({
+          const entry = await readContract(config, {
             address: CONTRACT_ADDRESS,
             abi,
             functionName: "getEntry",
