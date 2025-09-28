@@ -1,11 +1,11 @@
-// pages/entries.tsx
 import { useEffect, useState } from "react"
 import { useAccount } from "wagmi"
 import { readContract } from "wagmi/actions"
 import { config } from "../lib/wagmi"
 
 import abi from "../abi/FitnessDiary.json"
-import CONTRACT_ADDRESS from "../abi/FitnessDiary.address.json" assert { type: "json" }
+import contractAddressJson from "../abi/FitnessDiary.address.json" assert { type: "json" }
+const CONTRACT_ADDRESS = contractAddressJson as `0x${string}`
 
 export default function EntriesPage() {
   const { address, isConnected } = useAccount()
@@ -19,12 +19,11 @@ export default function EntriesPage() {
       try {
         setLoading(true)
 
-        // ⚡️ вызов getEntries с 3 параметрами: (user, offset, limit)
         const result = await readContract(config, {
-          address: CONTRACT_ADDRESS as `0x${string}`,
+          address: CONTRACT_ADDRESS,
           abi,
           functionName: "getEntries",
-          args: [address, BigInt(0), BigInt(50)], // offset=0, limit=50
+          args: [address, BigInt(0), BigInt(50)],
         })
 
         console.log("getEntries result:", result)
