@@ -1,87 +1,54 @@
 import { useEffect, useState } from "react";
-import { getDiaryContract } from "../hooks/useDiaryContract";
+import { useAccount, useReadContract } from "wagmi";
+import abi from "../abi/FitnessDiary.json";
 
-type Entry = {
-  date: number;
-  weightGrams: number;
-  caloriesIn: number;
-  caloriesOut: number;
-  steps: number;
-  exists: boolean;
-};
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_DIARY_ADDRESS as `0x${string}`;
 
-export default function EntriesPage() {
-  const [address, setAddress] = useState<string>("");
-  const [rows, setRows] = useState<Entry[]>([]);
+export default function Entries() {
+  const { address, isConnected } = useAccount();
+  const [dates, setDates] = useState<bigint[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const { data, refetch } = useReadContract({
+    address: CONTRACT_ADDRESS,
+    abi,
+    functionName: "getDates",
+    args: address ? [address, 0n, 50n] : undefined, // 🔹 3 аргумента!
+    query: { enabled: false },
+  });
+
   useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const { signer, contract } = await getDiaryContract();
-        const me = await signer.getAddress();
-        setAddress(me);
-
-        const dates: bigint[] = await contract.getDates(me);
-        // тянем все записи параллельно
-        const entries = await Promise.all(
-          dates.map(async (d) => {
-            const e = await contract.getEntry(me, Number(d));
-            return {
-              date: Number(e.date),
-              weightGrams: Number(e.weightGrams),
-              caloriesIn: Number(e.caloriesIn),
-              caloriesOut: Number(e.caloriesOut),
-              steps: Number(e.steps),
-              exists: Boolean(e.exists),
-            } as Entry;
-          })
-        );
-
-        // сортируем по дате по убыванию
-        entries.sort((a,b)=>b.date - a.date);
-        setRows(entries);
-      } catch (e: any) {
-        alert(`Ошибка загрузки: ${e?.message || e}`);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+    if (isConnected && address) {
+      setLoading(true);
+      refetch()
+        .then((res) => {
+          if (res?.data) {
+            setDates(res.data as bigint[]);
+          }
+        })
+        .catch((err) => {
+          console.error("Ошибка загрузки дат:", err);
+          alert("Ошибка загрузки: " + (err as any).message);
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [isConnected, address, refetch]);
 
   return (
-    <main style={{maxWidth:1000, margin:"40px auto", fontFamily:"system-ui"}}>
-      <h1 style={{fontSize:32, fontWeight:700}}>Мои записи</h1>
-      <div style={{opacity:0.7, marginBottom:12}}>Адрес: {address || "—"}</div>
+    <main style={{ maxWidth: 720, margin: "40px auto", fontFamily: "system-ui" }}>
+      <h1 style={{ fontSize: 28, fontWeight: 700 }}>Мои записи</h1>
+      <p>Адрес: {address || "—"}</p>
 
       {loading ? (
-        <div>Загрузка…</div>
-      ) : rows.length === 0 ? (
-        <div>Записей пока нет</div>
+        <p>Загрузка...</p>
+      ) : dates.length > 0 ? (
+        <ul>
+          {dates.map((d, i) => (
+            <li key={i}>{d.toString()}</li>
+          ))}
+        </ul>
       ) : (
-        <div style={{overflowX:"auto"}}>
-          <table style={{borderCollapse:"collapse", width:"100%"}}>
-            <thead>
-              <tr>
-                {["Дата","Вес (кг)","Калории In","Калории Out","Шаги"].map(h=>(
-                  <th key={h} style={{textAlign:"left", padding:"10px 8px", borderBottom:"1px solid #e5e5e5"}}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(r=>(
-                <tr key={r.date}>
-                  <td style={{padding:"8px"}}>{r.date}</td>
-                  <td style={{padding:"8px"}}>{(r.weightGrams/1000).toFixed(1)}</td>
-                  <td style={{padding:"8px"}}>{r.caloriesIn}</td>
-                  <td style={{padding:"8px"}}>{r.caloriesOut}</td>
-                  <td style={{padding:"8px"}}>{r.steps}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <p>Нет записей</p>
       )}
     </main>
   );
