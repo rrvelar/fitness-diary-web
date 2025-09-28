@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ethers } from "ethers";
 
 // Импортируем ABI и адрес контракта
-import abi from "../abi/FitnessDiary.abi.json";
+import abi from "../abi/FitnessDiary.json";
 import address from "../abi/FitnessDiary.address.json";
 
 export default function TestPage() {
