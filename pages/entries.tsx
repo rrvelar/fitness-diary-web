@@ -5,6 +5,7 @@ import { readContract } from "@wagmi/core"
 import { config } from "../lib/wagmi"
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
 import { Button } from "../components/ui/button"
+import { Skeleton } from "../components/ui/skeleton"
 import abi from "../abi/FitnessDiary.json"
 import contractAddress from "../abi/FitnessDiary.address.json"
 import { useAccount } from "wagmi"
@@ -56,7 +57,7 @@ export default function EntriesPage() {
 
         newEntries.push({
           date: Number(d),
-          weight: Number(entry[0]) / 1000, // граммы → кг
+          weight: Number(entry[0]) / 1000,
           caloriesIn: Number(entry[1]),
           caloriesOut: Number(entry[2]),
           steps: Number(entry[3])
@@ -103,9 +104,21 @@ export default function EntriesPage() {
             </CardContent>
           </Card>
         ))}
-      </div>
 
-      {loading && <p className="text-gray-500">Загрузка...</p>}
+        {loading &&
+          Array.from({ length: 3 }).map((_, i) => (
+            <Card key={`skeleton-${i}`}>
+              <CardHeader>
+                <Skeleton className="h-5 w-32" />
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-4 w-20" />
+              </CardContent>
+            </Card>
+          ))}
+      </div>
 
       {!loading && entries.length > 0 && (
         <Button onClick={loadEntries}>Показать ещё</Button>
