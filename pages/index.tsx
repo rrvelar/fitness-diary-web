@@ -4,12 +4,11 @@ import { readContract } from "@wagmi/core"
 import { useAccount } from "wagmi"
 import { config } from "../lib/wagmi"
 import abi from "../abi/FitnessDiary.json"
-import contractAddress from "../abi/FitnessDiary.address.json"
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 
-const CONTRACT_ADDRESS = contractAddress.address as unknown as `0x${string}`
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`
 
 type Entry = {
   date: number
