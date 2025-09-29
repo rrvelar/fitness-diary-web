@@ -18,10 +18,9 @@ type Entry = {
   steps: number
 }
 
-// ✅ универсальный фикс + поддержка формата { "address": "0x..." }
 const CONTRACT_ADDRESS = ((contractAddress as any).address || contractAddress) as `0x${string}`
 
-// 🚧 временно: список дат жёстко задан
+// 🚧 пока жёстко: список дат для теста
 const HARDCODED_DATES = [BigInt(20250911)]
 
 export default function EntriesPage() {
@@ -45,24 +44,23 @@ export default function EntriesPage() {
           args: [address, d]
         })) as any
 
-        // фильтруем пустые записи
+        // если пустая запись — пропускаем
         if (
-          Number(entry[0]) === 0 &&
           Number(entry[1]) === 0 &&
           Number(entry[2]) === 0 &&
-          Number(entry[3]) === 0
+          Number(entry[3]) === 0 &&
+          Number(entry[4]) === 0
         ) {
           continue
         }
 
         newEntries.push({
-            date: Number(entry[0]),
-            weight: Number(entry[1]) / 1000, // граммы → кг
-            caloriesIn: Number(entry[2]),
-            caloriesOut: Number(entry[3]),
-            steps: Number(entry[4])
+          date: Number(entry[0]), // YYYYMMDD
+          weight: Number(entry[1]) / 1000, // граммы → кг
+          caloriesIn: Number(entry[2]),
+          caloriesOut: Number(entry[3]),
+          steps: Number(entry[4])
         })
-
       }
 
       setEntries(newEntries)
@@ -78,6 +76,11 @@ export default function EntriesPage() {
     loadEntries()
   }, [address])
 
+  const formatDate = (yyyymmdd: number) => {
+    const str = String(yyyymmdd)
+    return str.replace(/(\d{4})(\d{2})(\d{2})/, (_, y, m, d) => `${d}/${m}/${y}`)
+  }
+
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-bold">Мои записи</h1>
@@ -92,13 +95,7 @@ export default function EntriesPage() {
         {entries.map((entry, i) => (
           <Card key={`${entry.date}-${i}`}>
             <CardHeader>
-              <CardTitle>
-                {new Date(
-                  entry.date.toString().slice(0, 4) + "-" +
-                  entry.date.toString().slice(4, 6) + "-" +
-                  entry.date.toString().slice(6, 8)
-                ).toLocaleDateString()}
-              </CardTitle>
+              <CardTitle>{formatDate(entry.date)}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-1 text-sm">
               <p>Вес: {entry.weight.toFixed(1)} кг</p>
