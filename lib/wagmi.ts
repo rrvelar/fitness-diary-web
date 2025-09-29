@@ -4,7 +4,6 @@ import { base } from "wagmi/chains"
 // 🌈 RainbowKit
 import {
   connectorsForWallets,
-  injectedWallet,
   metaMaskWallet,
   coinbaseWallet,
   walletConnectWallet,
@@ -18,7 +17,6 @@ const connectors = connectorsForWallets(
     {
       groupName: "Recommended",
       wallets: [
-        injectedWallet,
         metaMaskWallet,
         coinbaseWallet,
         walletConnectWallet,
