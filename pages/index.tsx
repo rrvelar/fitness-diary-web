@@ -6,9 +6,8 @@ export default function HomePage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (window?.farcaster) {
-      router.replace("/frame")
-    }
+    // 🚀 при загрузке сразу редиректим на /frame
+    router.replace("/frame")
   }, [router])
 
   return (
@@ -16,10 +15,16 @@ export default function HomePage() {
       <Head>
         <title>Fitness Diary</title>
         <meta property="og:title" content="Fitness Diary" />
-        <meta property="og:description" content="Onchain дневник: вес, калории и шаги" />
-        <meta property="og:image" content="https://fitness-diary-web.vercel.app/preview2.png" />
+        <meta
+          property="og:description"
+          content="Onchain дневник: вес, калории и шаги"
+        />
+        <meta
+          property="og:image"
+          content="https://fitness-diary-web.vercel.app/preview2.png"
+        />
 
-        {/* 🔑 Минимальная мета для Embed Tool */}
+        {/* 🔑 Минимальный fc:frame для валидации */}
         <meta
           name="fc:frame"
           content='{"version":"next","imageUrl":"https://fitness-diary-web.vercel.app/preview2.png"}'
