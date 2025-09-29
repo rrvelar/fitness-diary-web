@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { writeContract } from "@wagmi/core"
-import { config } from "../../lib/wagmi"
+import { wagmiServerConfig } from "../../lib/wagmi"
 import abi from "../../abi/FitnessDiary.json"
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`
