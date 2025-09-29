@@ -18,7 +18,8 @@ type Entry = {
   steps: number
 }
 
-const CONTRACT_ADDRESS = contractAddress as `0x${string}`
+// ✅ универсальный фикс для контракта
+const CONTRACT_ADDRESS = contractAddress as unknown as `0x${string}`
 
 export default function EntriesPage() {
   const { address } = useAccount()
@@ -34,6 +35,7 @@ export default function EntriesPage() {
     setError(null)
 
     try {
+      // забираем даты пачкой
       const dates = (await readContract(config, {
         address: CONTRACT_ADDRESS,
         abi: abi,
@@ -57,7 +59,7 @@ export default function EntriesPage() {
 
         newEntries.push({
           date: Number(d),
-          weight: Number(entry[0]) / 1000,
+          weight: Number(entry[0]) / 1000, // граммы → кг
           caloriesIn: Number(entry[1]),
           caloriesOut: Number(entry[2]),
           steps: Number(entry[3])
