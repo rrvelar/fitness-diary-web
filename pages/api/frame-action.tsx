@@ -19,7 +19,7 @@ const handler = async (ctx: any) => {
         </div>
       ),
       buttons: [
-        Button({ label: "🔙 Назад", action: "post", target: "/api/frame-action" }),
+        Button({ title: "🔙 Назад", action: "post", target: "/api/frame-action" }),
       ],
     }
   }
@@ -35,7 +35,7 @@ const handler = async (ctx: any) => {
       ),
       textInput: "20250929,79.3,2500,3000,12000",
       buttons: [
-        Button({ label: "✅ Сохранить", action: "post", target: "/api/frame-action?action=save" }),
+        Button({ title: "✅ Сохранить", action: "post", target: "/api/frame-action?action=save" }),
       ],
     }
   }
@@ -52,7 +52,7 @@ const handler = async (ctx: any) => {
           </div>
         ),
         buttons: [
-          Button({ label: "🔙 Назад", action: "post", target: "/api/frame-action" }),
+          Button({ title: "🔙 Назад", action: "post", target: "/api/frame-action" }),
         ],
       }
     }
@@ -75,7 +75,7 @@ const handler = async (ctx: any) => {
         </div>
       ),
       buttons: [
-        Button({ label: "🔗 Подписать во встроенном кошельке", action: "link", target: url }),
+        Button({ title: "🔗 Подписать во встроенном кошельке", action: "link", target: url }),
       ],
     }
   }
@@ -88,8 +88,8 @@ const handler = async (ctx: any) => {
       </div>
     ),
     buttons: [
-      Button({ label: "📖 Мои записи", action: "post", target: "/api/frame-action?action=entries" }),
-      Button({ label: "➕ Добавить", action: "post", target: "/api/frame-action?action=log" }),
+      Button({ title: "📖 Мои записи", action: "post", target: "/api/frame-action?action=entries" }),
+      Button({ title: "➕ Добавить", action: "post", target: "/api/frame-action?action=log" }),
     ],
   }
 }
