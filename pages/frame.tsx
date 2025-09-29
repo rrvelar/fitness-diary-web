@@ -27,7 +27,7 @@ export default function Frame() {
   const [status, setStatus] = useState<string>("")
   const sentRef = useRef(false)
 
-  // 1) Подключаем Farcaster SDK
+  // 1) SDK
   useEffect(() => {
     if (typeof window === "undefined") return
     const callReady = () => {
@@ -45,7 +45,7 @@ export default function Frame() {
     }
   }, [])
 
-  // 2) Если есть query — отправляем транзакцию
+  // 2) Tx
   useEffect(() => {
     if (!router.isReady) return
     if (sentRef.current) return
@@ -59,15 +59,17 @@ export default function Frame() {
       typeof steps !== "undefined"
 
     if (!haveAll) return
-    if (!window.farcaster?.wallet?.sendTransaction) {
-      setStatus("⚠️ Встроенный кошелёк Warpcast недоступен или метод sendTransaction отсутствует")
+
+    const wallet = window.farcaster?.wallet
+    if (!wallet?.sendTransaction) {
+      setStatus("⚠️ Встроенный кошелёк Warpcast недоступен")
       return
     }
 
     sentRef.current = true
     ;(async () => {
       try {
-        setStatus("⏳ Подписание транзакции во встроенном кошельке...")
+        setStatus("⏳ Подписание транзакции...")
 
         const ymd = Number(date as string)
         const w = Math.round(Number(weight as string) * 1000)
@@ -81,9 +83,7 @@ export default function Frame() {
           args: [ymd, w, ci, co, st],
         })
 
-        // ✅ берём проверенный объект
-        const wallet = window.farcaster.wallet
-        const txHash = await wallet!.sendTransaction!({
+        const txHash = await wallet.sendTransaction({
           to: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
           data,
           value: "0x0",
@@ -105,7 +105,6 @@ export default function Frame() {
         <meta property="og:description" content="Добавь запись прямо из Warpcast" />
         <meta property="og:image" content="https://fitness-diary-web.vercel.app/preview.png" />
 
-        {/* JSON vNext */}
         <meta
           name="fc:frame"
           content='{
