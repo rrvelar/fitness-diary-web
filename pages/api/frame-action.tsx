@@ -1,13 +1,13 @@
 // pages/api/frame-action.tsx
 /* eslint-disable react/jsx-key */
 import React from "react"
-import { createFrames, Button } from "frames.js/next/pages-router/server"
+import { createFrames, Button } from "frames.js/next"
 
 const frames = createFrames({
   basePath: "/api/frame-action",
 })
 
-const handleRequest = frames(async (ctx: any) => {
+const handler = async (ctx: any) => {
   const action = ctx.searchParams?.action ?? ""
 
   if (action === "entries") {
@@ -93,6 +93,6 @@ const handleRequest = frames(async (ctx: any) => {
       <Button action="post" target="/api/frame-action?action=log">➕ Добавить</Button>,
     ],
   }
-})
+}
 
-export default handleRequest
+export default frames(handler)
