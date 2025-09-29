@@ -8,35 +8,39 @@ import type { AppProps } from "next/app"
 import Layout from "../components/Layout"
 import { useEffect } from "react"
 
-// === 🛠️ Добавляем объявление глобального объекта ===
+// === 🛠️ Объявляем глобальный объект для TypeScript ===
 declare global {
   interface Window {
     farcaster?: {
-      actions: {
+      actions?: {
         ready: () => void
       }
     }
   }
 }
 
-// === 1. Frame component ===
+// === 1. Компонент, вызывающий ready() ===
 function WarpcastReady() {
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // Если SDK ещё не загружен — добавляем <script>
       if (!window.farcaster) {
         const script = document.createElement("script")
         script.src = "https://www.unpkg.com/@farcaster/mini/dist/sdk.min.js"
         script.async = true
         script.onload = () => {
-          if (window.farcaster) {
+          if (window.farcaster?.actions?.ready) {
             window.farcaster.actions.ready()
-            console.log("✅ Farcaster SDK ready (loaded by script)")
+            console.log("✅ Farcaster SDK ready (script loaded)")
           }
         }
         document.body.appendChild(script)
       } else {
-        window.farcaster.actions.ready()
-        console.log("✅ Farcaster SDK ready (already available)")
+        // Если SDK уже есть
+        if (window.farcaster?.actions?.ready) {
+          window.farcaster.actions.ready()
+          console.log("✅ Farcaster SDK ready (already available)")
+        }
       }
     }
   }, [])
@@ -46,7 +50,7 @@ function WarpcastReady() {
 
 const queryClient = new QueryClient()
 
-// === 2. Main App ===
+// === 2. Основной App ===
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <WagmiProvider config={wagmiClientConfig}>
