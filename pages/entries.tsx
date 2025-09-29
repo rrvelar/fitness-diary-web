@@ -1,14 +1,14 @@
-// app/entries/page.tsx
+// pages/entries.tsx
 
 "use client"
 
 import { useEffect, useState } from "react"
 import { readContract } from "@wagmi/core"
-import { config } from "../../lib/wagmi"
-import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card"
-import { Button } from "../../components/ui/button"
-import abi from "../../abi/FitnessDiary.json"
-import contractAddress from "../../abi/FitnessDiary.address.json"
+import { config } from "../lib/wagmi"
+import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
+import { Button } from "../components/ui/button"
+import abi from "../abi/FitnessDiary.json"
+import contractAddress from "../abi/FitnessDiary.address.json"
 import { useAccount } from "wagmi"
 
 type Entry = {
@@ -35,7 +35,6 @@ export default function EntriesPage() {
     setError(null)
 
     try {
-      // загружаем список дат
       const dates = (await readContract(config, {
         address: CONTRACT_ADDRESS,
         abi: abi,
@@ -48,7 +47,6 @@ export default function EntriesPage() {
         return
       }
 
-      // получаем каждую запись по дате
       const newEntries: Entry[] = []
       for (const d of dates) {
         const entry = (await readContract(config, {
@@ -67,7 +65,6 @@ export default function EntriesPage() {
         })
       }
 
-      // добавляем новые записи в список
       setEntries(prev => [...prev, ...newEntries])
       setStartIndex(prev => prev + COUNT)
     } catch (err: any) {
