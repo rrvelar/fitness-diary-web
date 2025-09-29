@@ -1,8 +1,10 @@
 // pages/frame.tsx
+import Head from "next/head"
+
 export default function Frame() {
   return (
     <>
-      <head>
+      <Head>
         <title>Fitness Diary Frame</title>
         <meta property="og:title" content="Fitness Diary Frame" />
         <meta property="og:description" content="Добавь запись прямо из Warpcast" />
@@ -19,11 +21,12 @@ export default function Frame() {
         <meta property="fc:frame:button:2" content="➕ Добавить" />
         <meta property="fc:frame:button:2:action" content="post" />
         <meta property="fc:frame:button:2:target" content="https://fitness-diary-web.vercel.app/api/frame-action?action=log" />
-      </head>
-      <body>
+      </Head>
+
+      <main>
         <h1>Fitness Diary Frame</h1>
         <p>Эта страница нужна только для Warpcast (frames).</p>
-      </body>
+      </main>
     </>
   )
 }
