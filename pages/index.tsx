@@ -24,10 +24,22 @@ export default function HomePage() {
           content="https://fitness-diary-web.vercel.app/preview2.png"
         />
 
-        {/* 🔑 Минимальный fc:frame для валидации */}
+        {/* ✅ Минимальный, но валидный fc:frame с кнопкой */}
         <meta
           name="fc:frame"
-          content='{"version":"next","imageUrl":"https://fitness-diary-web.vercel.app/preview2.png"}'
+          content='{
+            "version": "next",
+            "imageUrl": "https://fitness-diary-web.vercel.app/preview2.png",
+            "buttons": [
+              {
+                "title": "Открыть",
+                "action": {
+                  "type": "post",
+                  "target": "https://fitness-diary-web.vercel.app/frame"
+                }
+              }
+            ]
+          }'
         />
       </Head>
 
