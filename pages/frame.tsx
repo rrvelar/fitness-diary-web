@@ -60,7 +60,7 @@ export default function Frame() {
 
     if (!haveAll) return
     if (!window.farcaster?.wallet?.sendTransaction) {
-      setStatus("⚠️ Встроенный кошелёк Warpcast недоступен в этой среде")
+      setStatus("⚠️ Встроенный кошелёк Warpcast недоступен или метод sendTransaction отсутствует")
       return
     }
 
@@ -81,6 +81,7 @@ export default function Frame() {
           args: [ymd, w, ci, co, st],
         })
 
+        // ✅ теперь с защитой
         const txHash = await window.farcaster.wallet.sendTransaction({
           to: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
           data,
