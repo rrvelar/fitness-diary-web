@@ -4,17 +4,23 @@ import { useEffect } from "react"
 
 export default function Frame() {
   useEffect(() => {
-    const script = document.createElement("script")
-    script.src = "https://www.unpkg.com/@farcaster/mini/dist/sdk.min.js"
-    script.async = true
-    script.onload = () => {
+    if (typeof window === "undefined") return
+
+    const callReady = () => {
       // @ts-ignore
-      if (window.farcaster) {
-        // @ts-ignore
-        window.farcaster.actions.ready()
-      }
+      window.farcaster?.actions?.ready?.()
+      console.log("✅ Farcaster SDK ready")
     }
-    document.body.appendChild(script)
+
+    if (!window.farcaster) {
+      const script = document.createElement("script")
+      script.src = "https://warpcast.com/sdk/v2"   // ✅ вместо unpkg
+      script.async = true
+      script.onload = callReady
+      document.body.appendChild(script)
+    } else {
+      callReady()
+    }
   }, [])
 
   return (
@@ -22,10 +28,16 @@ export default function Frame() {
       <Head>
         <title>Fitness Diary Frame</title>
         <meta property="og:title" content="Fitness Diary Frame" />
-        <meta property="og:description" content="Добавь запись прямо из Warpcast" />
-        <meta property="og:image" content="https://fitness-diary-web.vercel.app/preview.png" />
+        <meta
+          property="og:description"
+          content="Добавь запись прямо из Warpcast"
+        />
+        <meta
+          property="og:image"
+          content="https://fitness-diary-web.vercel.app/preview.png"
+        />
 
-        {/* ✅ Новый JSON формат */}
+        {/* ✅ Новый JSON формат для Farcaster Frames */}
         <meta
           name="fc:frame"
           content='{
