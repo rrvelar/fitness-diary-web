@@ -1,4 +1,3 @@
-// pages/frame.tsx
 import Head from "next/head"
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/router"
@@ -27,25 +26,36 @@ export default function Frame() {
   const [status, setStatus] = useState<string>("")
   const sentRef = useRef(false)
 
-  // 1) Подключаем Farcaster SDK
+  // 1) Подключаем SDK и сразу дергаем ready()
   useEffect(() => {
     if (typeof window === "undefined") return
+
     const callReady = () => {
-      window.farcaster?.actions?.ready?.()
-      console.log("✅ Farcaster SDK ready")
+      try {
+        window.farcaster?.actions?.ready?.()
+        console.log("✅ Farcaster SDK ready called")
+      } catch (e) {
+        console.warn("⚠️ ready() not available yet", e)
+      }
     }
+
+    // вызвать ready() сразу (если SDK уже есть)
+    callReady()
+
+    // затем грузим SDK-скрипт, если его ещё нет
     if (!window.farcaster) {
       const s = document.createElement("script")
       s.src = "https://warpcast.com/sdk/v2"
       s.async = true
-      s.onload = callReady
+      s.onload = () => {
+        console.log("📥 Farcaster SDK script loaded")
+        callReady()
+      }
       document.body.appendChild(s)
-    } else {
-      callReady()
     }
   }, [])
 
-  // 2) Отправка транзакции из query-параметров
+  // 2) Если пришли query-параметры — шлём транзакцию
   useEffect(() => {
     if (!router.isReady) return
     if (sentRef.current) return
@@ -83,7 +93,6 @@ export default function Frame() {
           args: [ymd, w, ci, co, st],
         })
 
-        // ✅ теперь TS точно не ругается
         const txHash = await wallet.sendTransaction!({
           to: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
           data,
