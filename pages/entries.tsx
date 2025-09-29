@@ -24,7 +24,8 @@ export default function EntriesPage() {
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(false)
   const [count, setCount] = useState(5)
-  const [monthFilter, setMonthFilter] = useState("all")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+  const [filter, setFilter] = useState<"all" | "7d" | "30d">("all")
 
   useEffect(() => {
     if (!address) return
@@ -74,7 +75,7 @@ export default function EntriesPage() {
           })
         }
       }
-      setEntries(fetched.reverse())
+      setEntries(fetched)
     } finally {
       setLoading(false)
     }
@@ -85,35 +86,46 @@ export default function EntriesPage() {
     return `${str.slice(6, 8)}/${str.slice(4, 6)}/${str.slice(0, 4)}`
   }
 
-  // применяем фильтр по месяцу
-  const filteredEntries = monthFilter === "all"
-    ? entries
-    : entries.filter(e => e.date.toString().slice(4, 6) === monthFilter)
+  function filterEntries(list: Entry[]) {
+    const now = new Date()
+    return list.filter(e => {
+      if (filter === "7d") {
+        const d = new Date(`${e.date.toString().slice(0, 4)}-${e.date.toString().slice(4, 6)}-${e.date.toString().slice(6, 8)}`)
+        return (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24) <= 7
+      }
+      if (filter === "30d") {
+        const d = new Date(`${e.date.toString().slice(0, 4)}-${e.date.toString().slice(4, 6)}-${e.date.toString().slice(6, 8)}`)
+        return (now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24) <= 30
+      }
+      return true
+    })
+  }
+
+  const sortedEntries = [...filterEntries(entries)].sort((a, b) =>
+    sortOrder === "asc" ? a.date - b.date : b.date - a.date
+  )
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col items-center p-6 space-y-6">
       <h1 className="text-3xl font-bold text-emerald-700">Мои записи</h1>
 
-      <div className="flex items-center gap-2 w-full max-w-2xl">
-        <label className="text-sm text-gray-600">Фильтр по месяцу:</label>
+      <div className="flex gap-4">
         <select
-          value={monthFilter}
-          onChange={(e) => setMonthFilter(e.target.value)}
-          className="border rounded px-2 py-1 text-sm focus:ring-emerald-400 focus:outline-none"
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+          className="rounded border px-3 py-1 text-sm"
+        >
+          <option value="desc">Новые сверху</option>
+          <option value="asc">Старые сверху</option>
+        </select>
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as "all" | "7d" | "30d")}
+          className="rounded border px-3 py-1 text-sm"
         >
           <option value="all">Все</option>
-          <option value="01">Январь</option>
-          <option value="02">Февраль</option>
-          <option value="03">Март</option>
-          <option value="04">Апрель</option>
-          <option value="05">Май</option>
-          <option value="06">Июнь</option>
-          <option value="07">Июль</option>
-          <option value="08">Август</option>
-          <option value="09">Сентябрь</option>
-          <option value="10">Октябрь</option>
-          <option value="11">Ноябрь</option>
-          <option value="12">Декабрь</option>
+          <option value="7d">Последние 7 дней</option>
+          <option value="30d">Последние 30 дней</option>
         </select>
       </div>
 
@@ -123,11 +135,11 @@ export default function EntriesPage() {
         </CardHeader>
         <CardContent>
           {loading && <p className="text-gray-500">Загрузка...</p>}
-          {!loading && filteredEntries.length === 0 && <p className="text-gray-500">Записей пока нет</p>}
+          {!loading && sortedEntries.length === 0 && <p className="text-gray-500">Записей пока нет</p>}
 
           <div className="space-y-4">
-            {filteredEntries.map((entry, i) => {
-              const prev = filteredEntries[i + 1]
+            {sortedEntries.map((entry, i) => {
+              const prev = sortedEntries[i + 1]
               const weightDiff = prev ? (entry.weightGrams - prev.weightGrams) / 1000 : 0
 
               return (
@@ -142,24 +154,18 @@ export default function EntriesPage() {
                     </p>
                     {weightDiff !== 0 &&
                       (weightDiff > 0 ? (
-                        <ArrowUpCircle
-                          className="text-red-500 w-4 h-4"
-                          aria-label={`+${weightDiff.toFixed(1)} кг`}
-                        />
+                        <ArrowUpCircle className="text-red-500 w-4 h-4" />
                       ) : (
-                        <ArrowDownCircle
-                          className="text-green-500 w-4 h-4"
-                          aria-label={`${weightDiff.toFixed(1)} кг`}
-                        />
+                        <ArrowDownCircle className="text-green-500 w-4 h-4" />
                       ))}
                   </div>
                   <div className="flex gap-4 text-sm mt-1">
-                    <span className="flex items-center gap-1 text-gray-700">
-                      <Flame className="w-4 h-4 text-orange-500" />
+                    <span className={`flex items-center gap-1 ${entry.caloriesIn > entry.caloriesOut ? "text-red-600" : "text-green-600"}`}>
+                      <Flame className="w-4 h-4" />
                       {entry.caloriesIn}/{entry.caloriesOut}
                     </span>
-                    <span className="flex items-center gap-1 text-gray-700">
-                      <Footprints className="w-4 h-4 text-blue-500" />
+                    <span className="flex items-center gap-1 text-blue-600">
+                      <Footprints className="w-4 h-4" />
                       {entry.steps}
                     </span>
                   </div>
@@ -168,7 +174,7 @@ export default function EntriesPage() {
             })}
           </div>
 
-          {filteredEntries.length >= count && (
+          {entries.length >= count && (
             <div className="flex justify-center mt-4">
               <Button
                 onClick={() => setCount(count + 5)}
