@@ -1,15 +1,14 @@
+// pages/api/frame-action.tsx
+import React from "react"
 import { createFrames } from "frames.js/next"
 
 const frames = createFrames({
-  // basePath можно оставить как есть — он используется внутри frames.js
-  basePath: "/api/frame",
+  // Лучше указать реальный путь этого обработчика
+  basePath: "/api/frame-action",
 })
 
-// Явно типизируем обработчик через тип его параметров
-type Handler = Parameters<typeof frames>[0]
-
-const handler: Handler = (ctx) => {
-  const action = ctx.searchParams.action
+export default frames(async (ctx) => {
+  const action = ctx.searchParams?.action ?? ""
 
   if (action === "entries") {
     return {
@@ -22,7 +21,9 @@ const handler: Handler = (ctx) => {
       ),
       buttons: [{ label: "🔙 Назад", action: "post", target: "/api/frame-action" }],
     }
-  } else if (action === "log") {
+  }
+
+  if (action === "log") {
     return {
       image: (
         <div style={{ fontSize: 28, color: "blue", padding: 40 }}>
@@ -32,8 +33,10 @@ const handler: Handler = (ctx) => {
       textInput: "Например: 79.3, 2500, 3000, 12000",
       buttons: [{ label: "✅ Сохранить", action: "post", target: "/api/frame-action?action=save" }],
     }
-  } else if (action === "save") {
-    // здесь позже подключим запись в контракт
+  }
+
+  if (action === "save") {
+    // TODO: распарсить ctx.messageInput и записать в контракт
     return {
       image: (
         <div style={{ fontSize: 28, color: "green", padding: 40 }}>
@@ -44,7 +47,7 @@ const handler: Handler = (ctx) => {
     }
   }
 
-  // Fallback — обязательно возвращаем объект
+  // Fallback — всегда что-то возвращаем
   return {
     image: (
       <div style={{ fontSize: 28, color: "black", padding: 40 }}>
@@ -56,6 +59,4 @@ const handler: Handler = (ctx) => {
       { label: "➕ Добавить", action: "post", target: "/api/frame-action?action=log" },
     ],
   }
-}
-
-export default frames(handler)
+})
