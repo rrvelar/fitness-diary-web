@@ -1,12 +1,12 @@
 // pages/api/frame-action.ts
 import React from "react"
-import { createFrames, Button } from "frames.js/next"
+import { createFrames, Button, type FrameHandler } from "frames.js/next"
 
 const frames = createFrames({
   basePath: "/api/frame-action",
 })
 
-export default frames(async (ctx) => {
+const handler: FrameHandler = async (ctx) => {
   const action = ctx.searchParams?.action ?? ""
 
   if (action === "entries") {
@@ -64,8 +64,6 @@ export default frames(async (ctx) => {
     }
 
     const [dateStr, weightStr, calInStr, calOutStr, stepsStr] = parts
-
-    // ✅ Генерим ссылку на страницу frame.tsx с параметрами
     const url = `https://fitness-diary-web.vercel.app/frame?date=${dateStr}&weight=${weightStr}&calIn=${calInStr}&calOut=${calOutStr}&steps=${stepsStr}`
 
     return {
@@ -90,6 +88,7 @@ export default frames(async (ctx) => {
     }
   }
 
+  // fallback — ОБЯЗАТЕЛЕН
   return {
     image: (
       <div style={{ fontSize: 28, color: "black", padding: 40 }}>
@@ -105,4 +104,6 @@ export default frames(async (ctx) => {
       </Button>,
     ],
   }
-})
+}
+
+export default frames(handler)
