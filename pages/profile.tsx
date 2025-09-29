@@ -3,13 +3,15 @@ import { ConnectButton } from "@rainbow-me/rainbowkit"
 
 export default function ProfilePage() {
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      <Card className="w-full max-w-md shadow-md border border-gray-200">
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-6">
+      <Card className="w-full max-w-md shadow-md border border-emerald-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-center">Мой профиль</CardTitle>
+          <CardTitle className="text-2xl font-bold text-emerald-600 text-center">
+            Мой профиль
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <ConnectButton />
+          <ConnectButton showBalance={true} accountStatus="full" />
         </CardContent>
       </Card>
     </div>
