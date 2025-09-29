@@ -33,7 +33,34 @@ export default function Frame() {
           content="https://fitness-diary-web.vercel.app/preview.png"
         />
 
-        {/* 🔑 Основные мета-теги для Warpcast */}
+        {/* 🔑 Новый формат Embed (рекомендуемый Farcaster Mini Apps) */}
+        <meta
+          name="fc:miniapp"
+          content={JSON.stringify({
+            version: "1",
+            imageUrl: "https://fitness-diary-web.vercel.app/preview.png",
+            buttons: [
+              {
+                title: "📖 Мои записи",
+                action: {
+                  type: "post",
+                  target:
+                    "https://fitness-diary-web.vercel.app/api/frame-action?action=entries",
+                },
+              },
+              {
+                title: "➕ Добавить",
+                action: {
+                  type: "post",
+                  target:
+                    "https://fitness-diary-web.vercel.app/api/frame-action?action=log",
+                },
+              },
+            ],
+          })}
+        />
+
+        {/* ✅ Для обратной совместимости (старый формат) */}
         <meta property="fc:frame" content="vNext" />
         <meta
           property="fc:frame:image"
