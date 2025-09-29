@@ -1,27 +1,23 @@
 import { NextApiRequest, NextApiResponse } from "next"
+import { getFrameHtml } from "@coinbase/onchainkit"  // если используем onchainkit
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  res.setHeader("Content-Type", "text/html")
-  res.status(200).send(`
-    <!DOCTYPE html>
+  const html = `
     <html>
-      <head>
-        <title>Fitness Diary</title>
-        <meta name="og:title" content="Fitness Diary 📒💪" />
-        <meta name="og:description" content="Логируй вес и шаги прямо из Warpcast!" />
-        <meta name="og:image" content="https://fitness-diary-web.vercel.app/preview.png" />
-        <meta property="fc:frame" content="vNext" />
-        <meta property="fc:frame:image" content="https://fitness-diary-web.vercel.app/preview.png" />
-        <meta property="fc:frame:button:1" content="Добавить запись" />
-        <meta property="fc:frame:button:1:action" content="link" />
-        <meta property="fc:frame:button:1:target" content="https://fitness-diary-web.vercel.app/log" />
-        <meta property="fc:frame:button:2" content="Мои записи" />
-        <meta property="fc:frame:button:2:action" content="link" />
-        <meta property="fc:frame:button:2:target" content="https://fitness-diary-web.vercel.app/entries" />
-      </head>
       <body>
-        MiniDapp for Warpcast
+        <h2>Добавить запись</h2>
+        <form method="POST" action="/api/frame-log">
+          <input type="text" name="date" placeholder="20250929" required />
+          <input type="number" step="0.1" name="weight" placeholder="Вес (кг)" required />
+          <input type="number" name="caloriesIn" placeholder="Калории вход" required />
+          <input type="number" name="caloriesOut" placeholder="Калории расход" required />
+          <input type="number" name="steps" placeholder="Шаги" required />
+          <button type="submit">Добавить</button>
+        </form>
       </body>
     </html>
-  `)
+  `
+
+  res.setHeader("Content-Type", "text/html")
+  res.status(200).send(html)
 }
