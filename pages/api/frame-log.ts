@@ -19,18 +19,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const date = Number(dateStr)
     const weightGrams = Math.round(Number(weightStr) * 1000)
 
-    await writeContract(config, {
-      abi,
-      address: CONTRACT_ADDRESS,
-      functionName: "logEntry",
-      args: [
-        date,
-        weightGrams,
-        Number(caloriesIn),
-        Number(caloriesOut),
-        Number(steps),
-      ],
-    })
+    await writeContract(wagmiServerConfig, {
+  abi,
+  address: CONTRACT_ADDRESS,
+  functionName: "logEntry",
+  args: [...],
+})
 
     // ответ Frame
     res.setHeader("Content-Type", "text/html")
