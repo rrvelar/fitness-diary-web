@@ -9,7 +9,7 @@ import type { AppProps } from "next/app";
 import { useEffect } from "react";
 import { useRouter } from "next/router";
 // ⚠️ проверь путь: если у тебя Layout в components/ui/Layout.tsx — измени импорт
-import Layout from "../components/ui/Layout";
+import Layout from "../components/Layout";
 
 declare global {
   interface Window {
