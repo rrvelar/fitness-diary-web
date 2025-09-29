@@ -1,12 +1,11 @@
 import { useState } from "react"
 import { useAccount, useWriteContract } from "wagmi"
 import abi from "../abi/FitnessDiary.json"
-import contractAddress from "../abi/FitnessDiary.address.json"
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { config } from "../lib/wagmi"
 
-const CONTRACT_ADDRESS = contractAddress.address as unknown as `0x${string}`
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`
 
 export default function LogPage() {
   const { isConnected } = useAccount()
