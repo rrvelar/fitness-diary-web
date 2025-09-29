@@ -8,26 +8,35 @@ import type { AppProps } from "next/app"
 import Layout from "../components/Layout"
 import { useEffect } from "react"
 
+// === 🛠️ Добавляем объявление глобального объекта ===
+declare global {
+  interface Window {
+    farcaster?: {
+      actions: {
+        ready: () => void
+      }
+    }
+  }
+}
+
 // === 1. Frame component ===
 function WarpcastReady() {
   useEffect(() => {
     if (typeof window !== "undefined") {
-      // если SDK ещё не загружен — подгружаем
       if (!window.farcaster) {
         const script = document.createElement("script")
         script.src = "https://www.unpkg.com/@farcaster/mini/dist/sdk.min.js"
         script.async = true
         script.onload = () => {
-          // @ts-ignore
           if (window.farcaster) {
-            // @ts-ignore
             window.farcaster.actions.ready()
+            console.log("✅ Farcaster SDK ready (loaded by script)")
           }
         }
         document.body.appendChild(script)
       } else {
-        // @ts-ignore
         window.farcaster.actions.ready()
+        console.log("✅ Farcaster SDK ready (already available)")
       }
     }
   }, [])
