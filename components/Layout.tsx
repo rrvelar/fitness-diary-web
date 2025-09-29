@@ -2,12 +2,16 @@ import Link from "next/link"
 import { ReactNode } from "react"
 import { Dumbbell } from "lucide-react"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
+import { useRouter } from "next/router"
 
 type LayoutProps = {
   children: ReactNode
 }
 
 export default function Layout({ children }: LayoutProps) {
+  const router = useRouter()
+  const isMiniApp = router.pathname.startsWith("/frame") // ✅ проверка
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       {/* HEADER */}
@@ -32,11 +36,10 @@ export default function Layout({ children }: LayoutProps) {
               Профиль
             </Link>
 
-            {/* Wallet connect button */}
-            <ConnectButton
-              showBalance={false}
-              accountStatus="address"
-            />
+            {/* 🚫 НЕ показываем кнопку WalletConnect в мини-дапе */}
+            {!isMiniApp && (
+              <ConnectButton showBalance={false} accountStatus="address" />
+            )}
           </nav>
         </div>
       </header>
