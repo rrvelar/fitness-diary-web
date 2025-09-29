@@ -35,10 +35,8 @@ async function safeGetDates(user: string, startIndex: number, count: number): Pr
     console.warn(`getDates failed (count=${count}):`, message)
 
     if (count > 1 && message.includes("Out of bounds")) {
-      // уменьшаем пакет и пробуем ещё раз
       return safeGetDates(user, startIndex, Math.floor(count / 2))
     }
-    // если даже count=1 падает → значит записей нет
     return []
   }
 }
@@ -49,7 +47,7 @@ export default function EntriesPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [startIndex, setStartIndex] = useState(0)
-  const COUNT = 10
+  const COUNT = 5 // 🔽 можно уменьшить, чтобы не ловить 429
 
   const loadEntries = async () => {
     if (!address) return
@@ -73,6 +71,16 @@ export default function EntriesPage() {
           args: [address, d]
         })) as any
 
+        // ✅ фильтруем пустые записи (0,0,0,0)
+        if (
+          Number(entry[0]) === 0 &&
+          Number(entry[1]) === 0 &&
+          Number(entry[2]) === 0 &&
+          Number(entry[3]) === 0
+        ) {
+          continue
+        }
+
         newEntries.push({
           date: Number(d),
           weight: Number(entry[0]) / 1000, // граммы → кг
@@ -83,7 +91,7 @@ export default function EntriesPage() {
       }
 
       setEntries(prev => [...prev, ...newEntries])
-      setStartIndex(prev => prev + dates.length) // учитываем реальное количество
+      setStartIndex(prev => prev + dates.length) // увеличиваем offset на реальное количество
     } catch (err: any) {
       console.error(err)
       setError("Ошибка при загрузке данных")
