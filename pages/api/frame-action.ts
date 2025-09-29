@@ -1,14 +1,15 @@
 import { createFrames } from "frames.js/next"
+import type { FrameHandler } from "frames.js"
 
 const frames = createFrames({
   basePath: "/api/frame",
 })
 
-export default frames(async (ctx) => {
+// ✅ Явно указываем тип handler'а
+const handler: FrameHandler = async (ctx) => {
   const action = ctx.searchParams.action
 
   if (action === "entries") {
-    // Здесь в реале можно доставать данные из контракта
     return {
       image: (
         <div style={{ fontSize: 28, color: "black", padding: 40 }}>
@@ -34,7 +35,6 @@ export default frames(async (ctx) => {
   }
 
   if (action === "save") {
-    // Здесь ты можешь распарсить ctx.messageInput и сделать запись в контракт
     return {
       image: (
         <div style={{ fontSize: 28, color: "green", padding: 40 }}>
@@ -45,7 +45,7 @@ export default frames(async (ctx) => {
     }
   }
 
-  // 🔹 Фоллбек: главное меню
+  // 🔹 Всегда есть fallback (главное меню)
   return {
     image: (
       <div style={{ fontSize: 28, color: "black", padding: 40 }}>
@@ -57,4 +57,6 @@ export default frames(async (ctx) => {
       { label: "➕ Добавить", action: "post", target: "/api/frame?action=log" },
     ],
   }
-})
+}
+
+export default frames(handler)
