@@ -46,8 +46,7 @@ export default function EntriesPage() {
             functionName: "getDates",
             args: [address, BigInt(startIndex), BigInt(count)]
           })) as bigint[]
-        } catch (err: any) {
-          console.warn(`getDates failed (count=${count}):`, err.shortMessage || err.message)
+        } catch {
           count = Math.floor(count / 2)
         }
       }
@@ -82,8 +81,7 @@ export default function EntriesPage() {
         [...prev, ...newEntries].sort((a, b) => b.date - a.date)
       )
       setStartIndex((prev) => prev + dates.length)
-    } catch (err: any) {
-      console.error("Ошибка при загрузке:", err)
+    } catch {
       setError("Ошибка при загрузке данных")
     } finally {
       setLoading(false)
@@ -102,17 +100,16 @@ export default function EntriesPage() {
   const formatDate = (yyyymmdd: number) => {
     const str = String(yyyymmdd)
     if (str.length !== 8) return str
-    return str.replace(/(\d{4})(\d{2})(\d{2})/, (_, y, m, d) => `${d}/${m}/${y}`)
+    return str.replace(/(\d{4})(\d{2})(\d{2})/, (_, y, m, d) => `${d}.${m}.${y}`)
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-2xl mx-auto">
-      <h1 className="text-3xl font-extrabold text-center text-emerald-600">
-        📘 Мой дневник здоровья
+    <div className="p-6 space-y-6 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold text-center text-emerald-600">
+        Мой дневник здоровья
       </h1>
 
       {error && <p className="text-red-500">{error}</p>}
-
       {entries.length === 0 && !loading && (
         <p className="text-gray-500 text-center">У вас пока нет записей.</p>
       )}
@@ -125,26 +122,28 @@ export default function EntriesPage() {
           return (
             <Card
               key={`${entry.date}-${i}`}
-              className="rounded-2xl shadow-lg border border-gray-100 bg-white"
+              className="rounded-2xl shadow-md border border-gray-100 bg-white transition hover:shadow-lg hover:-translate-y-1"
             >
               <CardHeader>
-                <CardTitle className="text-xl font-semibold text-emerald-700">
+                <CardTitle className="text-lg font-semibold text-gray-700">
                   {formatDate(entry.date)}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 text-gray-700">
+              <CardContent className="grid grid-cols-2 gap-3 text-sm">
                 {/* Вес */}
                 <div className="flex items-center gap-2">
                   <span className="font-medium">Вес:</span>
-                  <span className="text-lg font-bold">{entry.weight.toFixed(1)} кг</span>
+                  <span className="font-bold text-gray-800">
+                    {entry.weight.toFixed(1)} кг
+                  </span>
                   {weightDiff !== 0 && (
                     weightDiff > 0 ? (
                       <span title={`+${weightDiff.toFixed(1)} кг`}>
-                        <ArrowUpCircle className="text-red-500 w-5 h-5" />
+                        <ArrowUpCircle className="text-red-500 w-4 h-4" />
                       </span>
                     ) : (
                       <span title={`${weightDiff.toFixed(1)} кг`}>
-                        <ArrowDownCircle className="text-green-500 w-5 h-5" />
+                        <ArrowDownCircle className="text-green-500 w-4 h-4" />
                       </span>
                     )
                   )}
@@ -152,20 +151,26 @@ export default function EntriesPage() {
 
                 {/* Калории вход */}
                 <div className="flex items-center gap-2">
-                  <Flame className="text-orange-500 w-5 h-5" />
-                  <span>Калории (вход): <b>{entry.caloriesIn}</b></span>
+                  <Flame className="text-orange-500 w-4 h-4" />
+                  <span className="text-gray-600">
+                    Вход: <b>{entry.caloriesIn}</b>
+                  </span>
                 </div>
 
                 {/* Калории расход */}
                 <div className="flex items-center gap-2">
-                  <Flame className="text-blue-500 w-5 h-5" />
-                  <span>Калории (расход): <b>{entry.caloriesOut}</b></span>
+                  <Flame className="text-blue-500 w-4 h-4" />
+                  <span className="text-gray-600">
+                    Расход: <b>{entry.caloriesOut}</b>
+                  </span>
                 </div>
 
                 {/* Шаги */}
                 <div className="flex items-center gap-2">
-                  <Footprints className="text-emerald-500 w-5 h-5" />
-                  <span>Шаги: <b>{entry.steps}</b></span>
+                  <Footprints className="text-emerald-500 w-4 h-4" />
+                  <span className="text-gray-600">
+                    Шаги: <b>{entry.steps}</b>
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -176,12 +181,12 @@ export default function EntriesPage() {
           Array.from({ length: 1 }).map((_, i) => (
             <Card key={`skeleton-${i}`} className="rounded-2xl shadow-md border">
               <CardHeader>
-                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-4 w-24" />
               </CardHeader>
               <CardContent className="space-y-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-28" />
-                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-28" />
+                <Skeleton className="h-3 w-24" />
               </CardContent>
             </Card>
           ))}
@@ -191,14 +196,13 @@ export default function EntriesPage() {
         {!loading && hasMore && (
           <Button
             onClick={loadEntries}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6 py-2 shadow-md"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-5 py-2 text-sm shadow-sm"
           >
             {loading ? "Загрузка..." : "Показать ещё"}
           </Button>
         )}
-
         {!hasMore && (
-          <p className="text-gray-500 mt-4">Все записи загружены ✅</p>
+          <p className="text-gray-500 mt-3 text-sm">Все записи загружены ✅</p>
         )}
       </div>
     </div>
