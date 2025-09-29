@@ -37,6 +37,12 @@ export default function Frame() {
 
     if (!haveAll) return
 
+    const provider = sdk.wallet.ethProvider
+    if (!provider?.request) {
+      setStatus("⚠️ Встроенный кошелёк Warpcast недоступен")
+      return
+    }
+
     sentRef.current = true
     ;(async () => {
       try {
@@ -54,11 +60,18 @@ export default function Frame() {
           args: [ymd, w, ci, co, st],
         })
 
-        // ✅ вызываем напрямую sdk.wallet.sendTransaction
-        const txHash = await sdk.wallet.sendTransaction({
-          to: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
-          data,
-          value: "0x0",
+        // 🚀 Отправка через EIP-1193 request
+        const [from] = await provider.request({ method: "eth_accounts" })
+        const txHash = await provider.request({
+          method: "eth_sendTransaction",
+          params: [
+            {
+              from,
+              to: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
+              data,
+              value: "0x0",
+            },
+          ],
         })
 
         setStatus(`✅ Успешно! tx: ${txHash}`)
