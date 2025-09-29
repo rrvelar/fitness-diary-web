@@ -7,7 +7,7 @@ import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { base } from 'wagmi/chains'
 import { useRouter } from 'next/router'
-import { ReactNode } from 'react'
+import { ReactNode, useMemo } from 'react'
 
 const config = getDefaultConfig({
   appName: 'Fitness Diary',
@@ -19,7 +19,12 @@ const queryClient = new QueryClient()
 
 export function Providers({ children }: { children: ReactNode }) {
   const router = useRouter()
-  const isMiniApp = router.pathname.startsWith('/frame')
+
+  // Используем useMemo, чтобы "запомнить" флаг и избежать лишних ре-рендеров
+  const isMiniApp = useMemo(() => {
+    if (typeof window === 'undefined') return false // на сервере — не миниапп
+    return router.pathname.startsWith('/frame')
+  }, [router.pathname])
 
   // 🚫 В мини-дапе никаких Wagmi/RainbowKit
   if (isMiniApp) {
