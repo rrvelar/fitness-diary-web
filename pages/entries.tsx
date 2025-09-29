@@ -18,11 +18,11 @@ type Entry = {
   steps: number
 }
 
-// ✅ универсальный фикс + поддержка объекта { address: "0x..." }
+// ✅ универсальный фикс + поддержка формата { "address": "0x..." }
 const CONTRACT_ADDRESS = ((contractAddress as any).address || contractAddress) as `0x${string}`
 
 // 🔒 безопасный вызов getDates (уменьшаем count при Out of bounds)
-async function safeGetDates(user: string, startIndex: number, count: number) {
+async function safeGetDates(user: string, startIndex: number, count: number): Promise<bigint[]> {
   try {
     return (await readContract(config, {
       address: CONTRACT_ADDRESS,
@@ -31,10 +31,14 @@ async function safeGetDates(user: string, startIndex: number, count: number) {
       args: [user, BigInt(startIndex), BigInt(count)]
     })) as any as bigint[]
   } catch (err: any) {
-    console.warn("getDates failed with count =", count, err)
-    if (count > 1) {
+    const message = String(err?.message || err)
+    console.warn(`getDates failed (count=${count}):`, message)
+
+    if (count > 1 && message.includes("Out of bounds")) {
+      // уменьшаем пакет и пробуем ещё раз
       return safeGetDates(user, startIndex, Math.floor(count / 2))
     }
+    // если даже count=1 падает → значит записей нет
     return []
   }
 }
