@@ -28,14 +28,14 @@ export default function LogPage() {
 
     setLoading(true)
     try {
-      const ymd = date.replaceAll("-", "") // "2025-09-29" -> "20250929"
+      const ymd = date.replaceAll("-", "")
       await writeContractAsync({
         abi,
         address: CONTRACT_ADDRESS,
         functionName: "logEntry",
         args: [
           Number(ymd),
-          Math.round(Number(weight) * 1000), // кг -> граммы
+          Math.round(Number(weight) * 1000),
           Number(caloriesIn),
           Number(caloriesOut),
           Number(steps),
@@ -57,70 +57,33 @@ export default function LogPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center py-10 px-4">
-      <Card className="w-full max-w-lg shadow-md border border-gray-200">
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center py-10 px-4">
+      <Card className="w-full max-w-lg shadow-sm border border-gray-200">
         <CardHeader>
-          <CardTitle className="text-xl font-bold text-center">Новая запись</CardTitle>
+          <CardTitle className="text-xl font-semibold text-emerald-700 text-center">Новая запись</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">Дата</label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                required
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">Вес (кг)</label>
-              <input
-                type="number"
-                step="0.1"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                required
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">Калории (вход)</label>
-              <input
-                type="number"
-                value={caloriesIn}
-                onChange={(e) => setCaloriesIn(e.target.value)}
-                required
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">Калории (расход)</label>
-              <input
-                type="number"
-                value={caloriesOut}
-                onChange={(e) => setCaloriesOut(e.target.value)}
-                required
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">Шаги</label>
-              <input
-                type="number"
-                value={steps}
-                onChange={(e) => setSteps(e.target.value)}
-                required
-                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
+            {[
+              { label: "Дата", type: "date", value: date, set: setDate },
+              { label: "Вес (кг)", type: "number", value: weight, set: setWeight },
+              { label: "Калории (вход)", type: "number", value: caloriesIn, set: setCaloriesIn },
+              { label: "Калории (расход)", type: "number", value: caloriesOut, set: setCaloriesOut },
+              { label: "Шаги", type: "number", value: steps, set: setSteps },
+            ].map((f, i) => (
+              <div key={i}>
+                <label className="block text-sm text-gray-600 mb-1">{f.label}</label>
+                <input
+                  type={f.type}
+                  value={f.value}
+                  onChange={(e) => f.set(e.target.value)}
+                  required
+                  className="w-full rounded-lg border px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                />
+              </div>
+            ))}
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading}
-            >
+            <Button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white" disabled={loading}>
               {loading ? "Сохраняю..." : "Добавить запись"}
             </Button>
           </form>
