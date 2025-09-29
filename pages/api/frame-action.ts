@@ -4,7 +4,7 @@ const frames = createFrames({
   basePath: "/api/frame",
 })
 
-export default frames(async (ctx) => {
+export default frames((ctx) => {
   const action = ctx.searchParams.action
 
   if (action === "entries") {
@@ -43,7 +43,7 @@ export default frames(async (ctx) => {
     }
   }
 
-  // 🔹 fallback всегда обязателен
+  // fallback
   return {
     image: (
       <div style={{ fontSize: 28, color: "black", padding: 40 }}>
