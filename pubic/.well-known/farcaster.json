@@ -1,0 +1,13 @@
+{
+  "accountAssociation": {
+    "header": "…",
+    "payload": "…",
+    "signature": "…"
+  },
+  "frame": {
+    "version": "vNext",
+    "name": "Fitness Diary",
+    "iconUrl": "https://fitness-diary-web.vercel.app/preview.png",
+    "homeUrl": "https://fitness-diary-web.vercel.app/frame"
+  }
+}
