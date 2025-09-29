@@ -6,10 +6,8 @@ export default function HomePage() {
   const router = useRouter()
 
   useEffect(() => {
-    // 🚫 Мини-аппу не нужен WalletConnect, сразу редиректим
-    if (window?.farcaster) {
-      router.replace("/frame")
-    }
+    // 🚀 при загрузке сразу редиректим на /frame
+    router.replace("/frame")
   }, [router])
 
   return (
@@ -26,19 +24,10 @@ export default function HomePage() {
           content="https://fitness-diary-web.vercel.app/preview2.png"
         />
 
-        {/* ✅ Минимально валидный frame JSON для Embed Tool */}
+        {/* 🔑 Минимальный fc:frame для валидации */}
         <meta
           name="fc:frame"
-          content='{
-            "version":"next",
-            "imageUrl":"https://fitness-diary-web.vercel.app/preview2.png",
-            "buttons":[
-              {
-                "title":"Открыть дневник",
-                "action":{"type":"launch_miniapp"}
-              }
-            ]
-          }'
+          content='{"version":"next","imageUrl":"https://fitness-diary-web.vercel.app/preview2.png"}'
         />
       </Head>
 
