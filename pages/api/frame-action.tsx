@@ -69,7 +69,7 @@ export default frames(async (ctx) => {
       const steps = Number(stepsStr)
 
       // Запись в контракт
-      await writeContract(config, {
+      await writeContract(wagmiServerConfig, {
         abi,
         address: CONTRACT_ADDRESS,
         functionName: "logEntry",
