@@ -1,85 +1,134 @@
-import { useState } from "react"
-import { useAccount, useWriteContract } from "wagmi"
-import abi from "../abi/FitnessDiary.json"
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { readContract } from "@wagmi/core"
+import { useAccount } from "wagmi"
+import { config } from "../lib/wagmi"
+import abi from "../abi/FitnessDiary.json"
+import contractAddress from "../abi/FitnessDiary.address.json"
+import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
+import { Button } from "../components/ui/button"
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
+
+const CONTRACT_ADDRESS = contractAddress.address as unknown as `0x${string}`
+
+type Entry = {
+  date: number
+  weightGrams: number
+  caloriesIn: number
+  caloriesOut: number
+  steps: number
+  exists: boolean
+}
 
 export default function HomePage() {
-  const { address, isConnected } = useAccount()
-  const { writeContractAsync } = useWriteContract()
+  const { address } = useAccount()
+  const [entries, setEntries] = useState<Entry[]>([])
+  const [loading, setLoading] = useState(false)
 
-  const [date, setDate] = useState("")
-  const [weight, setWeight] = useState("")
-  const [calIn, setCalIn] = useState("")
-  const [calOut, setCalOut] = useState("")
-  const [steps, setSteps] = useState("")
+  useEffect(() => {
+    if (!address) return
+    fetchEntries()
+  }, [address])
 
-  const addEntry = async () => {
-    if (!isConnected) {
-      alert("Подключи кошелёк")
-      return
-    }
-
+  async function fetchEntries() {
     try {
-      await writeContractAsync({
-        address: process.env.NEXT_PUBLIC_DIARY_ADDRESS as `0x${string}`,
+      setLoading(true)
+
+      const datesBigInt = await readContract(config, {
         abi,
-        functionName: "logEntry",
-        args: [
-          BigInt(date || "0"),
-          BigInt(weight || "0"),
-          BigInt(calIn || "0"),
-          BigInt(calOut || "0"),
-          BigInt(steps || "0"),
-        ],
-      })
-      alert("Запись добавлена!")
-    } catch (err) {
-      console.error("Ошибка при добавлении записи:", err)
-      alert("Ошибка при добавлении записи: " + (err as any).message)
+        address: CONTRACT_ADDRESS,
+        functionName: "getDates",
+        args: [address, BigInt(0), BigInt(10)],
+      }) as bigint[]
+
+      const dates = datesBigInt.map(d => Number(d))
+
+      const fetched: Entry[] = []
+      for (let d of dates.slice(-3)) { // последние 3 даты
+        const entry = await readContract(config, {
+          abi,
+          address: CONTRACT_ADDRESS,
+          functionName: "getEntry",
+          args: [address, BigInt(d)],
+        }) as unknown as Entry
+
+        if (entry.exists) {
+          fetched.push({
+            ...entry,
+            date: Number(entry.date),
+            weightGrams: Number(entry.weightGrams),
+            caloriesIn: Number(entry.caloriesIn),
+            caloriesOut: Number(entry.caloriesOut),
+            steps: Number(entry.steps),
+          })
+        }
+      }
+
+      setEntries(fetched.reverse()) // новые сверху
+    } finally {
+      setLoading(false)
     }
   }
 
+  function formatDate(num: number) {
+    const str = num.toString()
+    return `${str.slice(6, 8)}/${str.slice(4, 6)}/${str.slice(0, 4)}`
+  }
+
+  const chartData = entries.map(e => ({
+    date: formatDate(e.date),
+    weight: e.weightGrams / 1000,
+  }))
+
   return (
-    <main style={{ maxWidth: 720, margin: "40px auto", fontFamily: "system-ui" }}>
-      <h1 style={{ fontSize: 32, fontWeight: 700 }}>Fitness Diary</h1>
-      <ul>
-        <li><Link href="/log">Добавить / обновить запись</Link></li>
-        <li><Link href="/entries">Мои записи</Link></li>
-        <li><Link href="/stats">Графики</Link></li>
-        <li><Link href="/test">Тестовая страница</Link></li>
-      </ul>
+    <div className="flex flex-col items-center p-6 space-y-6">
+      <h1 className="text-3xl font-bold text-blue-600">Мой дневник фитнеса</h1>
 
-      <div style={{ marginTop: 40 }}>
-        <h2>Быстрое добавление записи</h2>
+      <Link href="/log">
+        <Button className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg shadow">
+          ➕ Добавить запись
+        </Button>
+      </Link>
 
-        <input
-          placeholder="Дата (YYYYMMDD)"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
-        <input
-          placeholder="Вес (г)"
-          value={weight}
-          onChange={(e) => setWeight(e.target.value)}
-        />
-        <input
-          placeholder="Калории потреблено"
-          value={calIn}
-          onChange={(e) => setCalIn(e.target.value)}
-        />
-        <input
-          placeholder="Калории сожжено"
-          value={calOut}
-          onChange={(e) => setCalOut(e.target.value)}
-        />
-        <input
-          placeholder="Шаги"
-          value={steps}
-          onChange={(e) => setSteps(e.target.value)}
-        />
+      <Card className="w-full max-w-2xl p-4">
+        <CardHeader>
+          <CardTitle className="text-lg">Динамика веса</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={chartData}>
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="weight" stroke="#2563eb" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-gray-500">Нет данных для графика</p>
+          )}
+        </CardContent>
+      </Card>
 
-        <button onClick={addEntry}>Добавить запись</button>
-      </div>
-    </main>
+      <Card className="w-full max-w-2xl p-4">
+        <CardHeader>
+          <CardTitle className="text-lg">Последние записи</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading && <p>Загрузка...</p>}
+          {!loading && entries.length === 0 && <p className="text-gray-500">Записей пока нет</p>}
+          <div className="space-y-4">
+            {entries.map((entry, i) => (
+              <div key={i} className="border rounded-lg p-3 shadow-sm bg-white">
+                <p className="text-sm text-gray-600">{formatDate(entry.date)}</p>
+                <p className="font-medium">Вес: {(entry.weightGrams / 1000).toFixed(1)} кг</p>
+                <p className="text-sm">Калории: {entry.caloriesIn} / {entry.caloriesOut}</p>
+                <p className="text-sm">Шаги: {entry.steps}</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }
