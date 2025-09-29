@@ -8,7 +8,6 @@ import contractAddress from "../abi/FitnessDiary.address.json"
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
-import { ConnectButton } from "@rainbow-me/rainbowkit"   // 🔹 добавили
 
 const CONTRACT_ADDRESS = contractAddress.address as unknown as `0x${string}`
 
@@ -31,17 +30,34 @@ export default function HomePage() {
     fetchEntries()
   }, [address])
 
+  // универсальный фикс для Out of bounds
+  async function safeGetDates(addr: `0x${string}`) {
+    let count = 10n
+    while (count > 0n) {
+      try {
+        const result = await readContract(config, {
+          abi,
+          address: CONTRACT_ADDRESS,
+          functionName: "getDates",
+          args: [addr, 0n, count],
+        }) as bigint[]
+        return result
+      } catch (err: any) {
+        if (err.message.includes("Out of bounds")) {
+          count -= 1n // уменьшаем и пробуем снова
+        } else {
+          throw err
+        }
+      }
+    }
+    return []
+  }
+
   async function fetchEntries() {
     try {
       setLoading(true)
 
-      const datesBigInt = await readContract(config, {
-        abi,
-        address: CONTRACT_ADDRESS,
-        functionName: "getDates",
-        args: [address, BigInt(0), BigInt(10)],
-      }) as bigint[]
-
+      const datesBigInt = await safeGetDates(address as `0x${string}`)
       const dates = datesBigInt.map(d => Number(d))
 
       const fetched: Entry[] = []
@@ -83,11 +99,6 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col items-center p-6 space-y-6">
-      {/* 🔹 Кнопка подключения кошелька */}
-      <div className="self-end">
-        <ConnectButton showBalance={false} chainStatus="icon" />
-      </div>
-
       <h1 className="text-3xl font-bold text-blue-600">Мой дневник фитнеса</h1>
 
       <Link href="/log">
