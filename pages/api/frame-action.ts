@@ -1,12 +1,12 @@
 // pages/api/frame-action.ts
 import React from "react"
-import { createFrames, Button, type FrameHandler } from "frames.js/next"
+import { createFrames, Button } from "frames.js/next"
 
 const frames = createFrames({
   basePath: "/api/frame-action",
 })
 
-const handler: FrameHandler = async (ctx) => {
+export default frames(async (ctx) => {
   const action = ctx.searchParams?.action ?? ""
 
   if (action === "entries") {
@@ -88,7 +88,7 @@ const handler: FrameHandler = async (ctx) => {
     }
   }
 
-  // fallback — ОБЯЗАТЕЛЕН
+  // fallback
   return {
     image: (
       <div style={{ fontSize: 28, color: "black", padding: 40 }}>
@@ -104,6 +104,4 @@ const handler: FrameHandler = async (ctx) => {
       </Button>,
     ],
   }
-}
-
-export default frames(handler)
+})
