@@ -6,6 +6,18 @@ import { wagmiClientConfig } from "../lib/wagmi"
 import "../styles/globals.css"
 import type { AppProps } from "next/app"
 import Layout from "../components/Layout"
+import { useEffect } from "react"
+import { actions } from "@farcaster/mini"
+import type { AppProps } from "next/app"
+
+export default function MyApp({ Component, pageProps }: AppProps) {
+  useEffect(() => {
+    actions.ready()
+  }, [])
+
+  return <Component {...pageProps} />
+}
+
 
 const qc = new QueryClient()
 const queryClient = new QueryClient()
