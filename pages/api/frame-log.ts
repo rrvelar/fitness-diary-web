@@ -15,16 +15,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // формат: 20250929,75.5,2000,1800,8000
-    const [dateStr, weightStr, caloriesIn, caloriesOut, steps] = input.split(",")
+    const [dateStr, weightStr, caloriesInStr, caloriesOutStr, stepsStr] = input.split(",")
     const date = Number(dateStr)
     const weightGrams = Math.round(Number(weightStr) * 1000)
+    const caloriesIn = Number(caloriesInStr)
+    const caloriesOut = Number(caloriesOutStr)
+    const steps = Number(stepsStr)
 
     await writeContract(wagmiServerConfig, {
-  abi,
-  address: CONTRACT_ADDRESS,
-  functionName: "logEntry",
-  args: [...],
-})
+      abi,
+      address: CONTRACT_ADDRESS,
+      functionName: "logEntry",
+      args: [date, weightGrams, caloriesIn, caloriesOut, steps],
+    })
 
     // ответ Frame
     res.setHeader("Content-Type", "text/html")
@@ -43,8 +46,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         <body>✅ Запись добавлена</body>
       </html>
     `)
-  } catch (err) {
-    console.error(err)
-    res.status(500).json({ error: "Ошибка при записи" })
+  } catch (err: any) {
+    console.error("Ошибка при записи:", err)
+    res.status(500).json({ error: "Ошибка при записи", details: err.message })
   }
 }
