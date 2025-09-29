@@ -1,13 +1,13 @@
 // pages/api/frame-action.tsx
 import React from "react"
-import { createFrames } from "frames.js/next"
+import { createFrames, Button } from "frames.js/next"
 
 const frames = createFrames({
-  // Лучше указать реальный путь этого обработчика
+  // ставим реальный путь этого API-роута
   basePath: "/api/frame-action",
 })
 
-export default frames(async (ctx) => {
+export default frames((ctx) => {
   const action = ctx.searchParams?.action ?? ""
 
   if (action === "entries") {
@@ -19,7 +19,9 @@ export default frames(async (ctx) => {
           <br />• 79.5 кг — 2400/3100 кал, 11000 шагов
         </div>
       ),
-      buttons: [{ label: "🔙 Назад", action: "post", target: "/api/frame-action" }],
+      buttons: [
+        <Button action="post" target="/api/frame-action">🔙 Назад</Button>,
+      ],
     }
   }
 
@@ -31,23 +33,27 @@ export default frames(async (ctx) => {
         </div>
       ),
       textInput: "Например: 79.3, 2500, 3000, 12000",
-      buttons: [{ label: "✅ Сохранить", action: "post", target: "/api/frame-action?action=save" }],
+      buttons: [
+        <Button action="post" target="/api/frame-action?action=save">✅ Сохранить</Button>,
+      ],
     }
   }
 
   if (action === "save") {
-    // TODO: распарсить ctx.messageInput и записать в контракт
+    // здесь позже подключим реальную запись в контракт
     return {
       image: (
         <div style={{ fontSize: 28, color: "green", padding: 40 }}>
           Запись сохранена ✅
         </div>
       ),
-      buttons: [{ label: "🔙 Назад", action: "post", target: "/api/frame-action" }],
+      buttons: [
+        <Button action="post" target="/api/frame-action">🔙 Назад</Button>,
+      ],
     }
   }
 
-  // Fallback — всегда что-то возвращаем
+  // fallback — всегда возвращаем объект
   return {
     image: (
       <div style={{ fontSize: 28, color: "black", padding: 40 }}>
@@ -55,8 +61,8 @@ export default frames(async (ctx) => {
       </div>
     ),
     buttons: [
-      { label: "📖 Мои записи", action: "post", target: "/api/frame-action?action=entries" },
-      { label: "➕ Добавить", action: "post", target: "/api/frame-action?action=log" },
+      <Button action="post" target="/api/frame-action?action=entries">📖 Мои записи</Button>,
+      <Button action="post" target="/api/frame-action?action=log">➕ Добавить</Button>,
     ],
   }
 })
