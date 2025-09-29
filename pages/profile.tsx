@@ -2,8 +2,12 @@
 import { useAccount, useBalance } from "wagmi"
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
+import { useRouter } from "next/router"
 
 export default function ProfilePage() {
+  const router = useRouter()
+  const isMiniApp = router.pathname.startsWith("/frame")
+
   const { address, isConnected } = useAccount()
   const { data: balance } = useBalance({
     address,
@@ -19,18 +23,26 @@ export default function ProfilePage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center space-y-4">
-          <ConnectButton />
+          {isMiniApp ? (
+            <p className="text-gray-700 text-center">
+              🔐 Используется встроенный кошелёк Warpcast
+            </p>
+          ) : (
+            <>
+              <ConnectButton />
 
-          {isConnected && (
-            <div className="w-full space-y-2 text-center">
-              <p className="text-gray-700">
-                <span className="font-medium">Адрес:</span> {address}
-              </p>
-              <p className="text-gray-700">
-                <span className="font-medium">Баланс:</span>{" "}
-                {balance ? `${balance.formatted} ${balance.symbol}` : "…"}
-              </p>
-            </div>
+              {isConnected && (
+                <div className="w-full space-y-2 text-center">
+                  <p className="text-gray-700">
+                    <span className="font-medium">Адрес:</span> {address}
+                  </p>
+                  <p className="text-gray-700">
+                    <span className="font-medium">Баланс:</span>{" "}
+                    {balance ? `${balance.formatted} ${balance.symbol}` : "…"}
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
