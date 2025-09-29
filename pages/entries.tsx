@@ -30,23 +30,18 @@ export default function EntriesPage() {
     fetchEntries()
   }, [address, count])
 
-  // универсальный фикс для getDates
   async function safeGetDates(addr: `0x${string}`, count: bigint) {
     while (count > 0n) {
       try {
-        const result = await readContract(config, {
+        return await readContract(config, {
           abi,
           address: CONTRACT_ADDRESS,
           functionName: "getDates",
           args: [addr, 0n, count],
         }) as bigint[]
-        return result
       } catch (err: any) {
-        if (err.message.includes("Out of bounds")) {
-          count -= 1n
-        } else {
-          throw err
-        }
+        if (err.message.includes("Out of bounds")) count -= 1n
+        else throw err
       }
     }
     return []
@@ -55,7 +50,6 @@ export default function EntriesPage() {
   async function fetchEntries() {
     try {
       setLoading(true)
-
       const datesBigInt = await safeGetDates(address as `0x${string}`, BigInt(count))
       const dates = datesBigInt.map(d => Number(d))
 
@@ -79,7 +73,6 @@ export default function EntriesPage() {
           })
         }
       }
-
       setEntries(fetched.reverse())
     } finally {
       setLoading(false)
@@ -92,12 +85,12 @@ export default function EntriesPage() {
   }
 
   return (
-    <div className="flex flex-col items-center p-6 space-y-6">
-      <h1 className="text-3xl font-bold text-emerald-600">Мои записи</h1>
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col items-center p-6 space-y-6">
+      <h1 className="text-3xl font-bold text-emerald-700">Мои записи</h1>
 
-      <Card className="w-full max-w-2xl p-4">
+      <Card className="w-full max-w-2xl shadow-sm border border-gray-200">
         <CardHeader>
-          <CardTitle className="text-lg text-gray-800">История</CardTitle>
+          <CardTitle className="text-xl font-semibold text-emerald-700">История</CardTitle>
         </CardHeader>
         <CardContent>
           {loading && <p className="text-gray-500">Загрузка...</p>}
@@ -111,12 +104,11 @@ export default function EntriesPage() {
               return (
                 <div
                   key={i}
-                  className="border rounded-lg p-4 shadow bg-gray-50 hover:shadow-md transition"
+                  className="border rounded-lg p-4 shadow-sm bg-white hover:shadow-md transition"
                 >
-                  <p className="text-sm text-gray-500 mb-1">{formatDate(entry.date)}</p>
-
-                  <div className="flex items-center gap-2 mb-2">
-                    <p className="font-semibold text-gray-800">
+                  <p className="text-sm text-gray-600">{formatDate(entry.date)}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-gray-800">
                       Вес: {(entry.weightGrams / 1000).toFixed(1)} кг
                     </p>
                     {weightDiff !== 0 &&
@@ -132,18 +124,13 @@ export default function EntriesPage() {
                         />
                       ))}
                   </div>
-
-                  <div className="flex flex-wrap gap-4 text-sm">
-                    <span className="flex items-center gap-1 text-orange-600 font-medium">
-                      <Flame className="w-4 h-4" />
-                      {entry.caloriesIn}
+                  <div className="flex gap-4 text-sm mt-1">
+                    <span className="flex items-center gap-1 text-gray-700">
+                      <Flame className="w-4 h-4 text-orange-500" />
+                      {entry.caloriesIn}/{entry.caloriesOut}
                     </span>
-                    <span className="flex items-center gap-1 text-blue-600 font-medium">
-                      <Flame className="w-4 h-4" />
-                      {entry.caloriesOut}
-                    </span>
-                    <span className="flex items-center gap-1 text-green-600 font-medium">
-                      <Footprints className="w-4 h-4" />
+                    <span className="flex items-center gap-1 text-gray-700">
+                      <Footprints className="w-4 h-4 text-blue-500" />
                       {entry.steps}
                     </span>
                   </div>
