@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { readContract } from "@wagmi/core"
 import { useAccount } from "wagmi"
-import { config } from "../lib/wagmi"
+import { wagmiClientConfig } from "../lib/wagmi"
 import abi from "../abi/FitnessDiary.json"
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
 import { Button } from "../components/ui/button"
@@ -35,7 +35,7 @@ export default function EntriesPage() {
   async function safeGetDates(addr: `0x${string}`, count: bigint) {
     while (count > 0n) {
       try {
-        return await readContract(config, {
+        return await readContract(wagmiClientConfig, {
           abi,
           address: CONTRACT_ADDRESS,
           functionName: "getDates",
