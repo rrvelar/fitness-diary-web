@@ -24,6 +24,7 @@ export default function EntriesPage() {
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(false)
   const [count, setCount] = useState(5)
+  const [monthFilter, setMonthFilter] = useState("all")
 
   useEffect(() => {
     if (!address) return
@@ -84,9 +85,37 @@ export default function EntriesPage() {
     return `${str.slice(6, 8)}/${str.slice(4, 6)}/${str.slice(0, 4)}`
   }
 
+  // применяем фильтр по месяцу
+  const filteredEntries = monthFilter === "all"
+    ? entries
+    : entries.filter(e => e.date.toString().slice(4, 6) === monthFilter)
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col items-center p-6 space-y-6">
       <h1 className="text-3xl font-bold text-emerald-700">Мои записи</h1>
+
+      <div className="flex items-center gap-2 w-full max-w-2xl">
+        <label className="text-sm text-gray-600">Фильтр по месяцу:</label>
+        <select
+          value={monthFilter}
+          onChange={(e) => setMonthFilter(e.target.value)}
+          className="border rounded px-2 py-1 text-sm focus:ring-emerald-400 focus:outline-none"
+        >
+          <option value="all">Все</option>
+          <option value="01">Январь</option>
+          <option value="02">Февраль</option>
+          <option value="03">Март</option>
+          <option value="04">Апрель</option>
+          <option value="05">Май</option>
+          <option value="06">Июнь</option>
+          <option value="07">Июль</option>
+          <option value="08">Август</option>
+          <option value="09">Сентябрь</option>
+          <option value="10">Октябрь</option>
+          <option value="11">Ноябрь</option>
+          <option value="12">Декабрь</option>
+        </select>
+      </div>
 
       <Card className="w-full max-w-2xl shadow-sm border border-gray-200">
         <CardHeader>
@@ -94,11 +123,11 @@ export default function EntriesPage() {
         </CardHeader>
         <CardContent>
           {loading && <p className="text-gray-500">Загрузка...</p>}
-          {!loading && entries.length === 0 && <p className="text-gray-500">Записей пока нет</p>}
+          {!loading && filteredEntries.length === 0 && <p className="text-gray-500">Записей пока нет</p>}
 
           <div className="space-y-4">
-            {entries.map((entry, i) => {
-              const prev = entries[i + 1]
+            {filteredEntries.map((entry, i) => {
+              const prev = filteredEntries[i + 1]
               const weightDiff = prev ? (entry.weightGrams - prev.weightGrams) / 1000 : 0
 
               return (
@@ -139,7 +168,7 @@ export default function EntriesPage() {
             })}
           </div>
 
-          {entries.length >= count && (
+          {filteredEntries.length >= count && (
             <div className="flex justify-center mt-4">
               <Button
                 onClick={() => setCount(count + 5)}
