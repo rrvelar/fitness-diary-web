@@ -19,7 +19,9 @@ const handler = async (ctx: any) => {
         </div>
       ),
       buttons: [
-        Button({ title: "🔙 Назад", action: "post", target: "/api/frame-action" }),
+        <Button key="back" action="post" target="/api/frame-action">
+          🔙 Назад
+        </Button>,
       ],
     }
   }
@@ -35,7 +37,9 @@ const handler = async (ctx: any) => {
       ),
       textInput: "20250929,79.3,2500,3000,12000",
       buttons: [
-        Button({ title: "✅ Сохранить", action: "post", target: "/api/frame-action?action=save" }),
+        <Button key="save" action="post" target="/api/frame-action?action=save">
+          ✅ Сохранить
+        </Button>,
       ],
     }
   }
@@ -52,7 +56,9 @@ const handler = async (ctx: any) => {
           </div>
         ),
         buttons: [
-          Button({ title: "🔙 Назад", action: "post", target: "/api/frame-action" }),
+          <Button key="back3" action="post" target="/api/frame-action">
+            🔙 Назад
+          </Button>,
         ],
       }
     }
@@ -75,7 +81,9 @@ const handler = async (ctx: any) => {
         </div>
       ),
       buttons: [
-        Button({ title: "🔗 Подписать во встроенном кошельке", action: "link", target: url }),
+        <Button key="sign" action="link" target={url}>
+          🔗 Подписать во встроенном кошельке
+        </Button>,
       ],
     }
   }
@@ -88,8 +96,12 @@ const handler = async (ctx: any) => {
       </div>
     ),
     buttons: [
-      Button({ title: "📖 Мои записи", action: "post", target: "/api/frame-action?action=entries" }),
-      Button({ title: "➕ Добавить", action: "post", target: "/api/frame-action?action=log" }),
+      <Button key="entries" action="post" target="/api/frame-action?action=entries">
+        📖 Мои записи
+      </Button>,
+      <Button key="log" action="post" target="/api/frame-action?action=log">
+        ➕ Добавить
+      </Button>,
     ],
   }
 }
