@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { readContract } from "@wagmi/core"
 import { useAccount } from "wagmi"
-import { config } from "../lib/wagmi"
+import { wagmiClientConfig } from "../lib/wagmi"   // ✅ правильный импорт
 import abi from "../abi/FitnessDiary.json"
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
 import { Button } from "../components/ui/button"
@@ -34,7 +34,7 @@ export default function HomePage() {
     let count = 10n
     while (count > 0n) {
       try {
-        const result = await readContract(config, {
+        const result = await readContract(wagmiClientConfig, {   // ✅ заменил config
           abi,
           address: CONTRACT_ADDRESS,
           functionName: "getDates",
@@ -60,7 +60,7 @@ export default function HomePage() {
 
       const fetched: Entry[] = []
       for (let d of dates.slice(-3)) {
-        const entry = await readContract(config, {
+        const entry = await readContract(wagmiClientConfig, {   // ✅ заменил config
           abi,
           address: CONTRACT_ADDRESS,
           functionName: "getEntry",
