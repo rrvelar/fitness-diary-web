@@ -1,12 +1,11 @@
 import { createFrames } from "frames.js/next"
-import type { FrameHandler } from "frames.js"
 
 const frames = createFrames({
   basePath: "/api/frame",
 })
 
-// ✅ Явно указываем тип handler'а
-const handler: FrameHandler = async (ctx) => {
+// Типизируем обработчик правильно
+export default frames(async (ctx): Promise<ReturnType<typeof frames>> => {
   const action = ctx.searchParams.action
 
   if (action === "entries") {
@@ -45,7 +44,7 @@ const handler: FrameHandler = async (ctx) => {
     }
   }
 
-  // 🔹 Всегда есть fallback (главное меню)
+  // Главное меню (fallback)
   return {
     image: (
       <div style={{ fontSize: 28, color: "black", padding: 40 }}>
@@ -57,6 +56,4 @@ const handler: FrameHandler = async (ctx) => {
       { label: "➕ Добавить", action: "post", target: "/api/frame?action=log" },
     ],
   }
-}
-
-export default frames(handler)
+})
