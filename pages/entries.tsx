@@ -15,7 +15,9 @@ type Entry = {
   exists: boolean
 }
 
-const CONTRACT_ADDRESS = contractAddress as unknown as `0x${string}`
+// если JSON выглядит как { "address": "0x...." }
+const CONTRACT_ADDRESS = (contractAddress as { address: string }).address as `0x${string}`
+
 
 export default function EntriesPage() {
   const { address } = useAccount()
