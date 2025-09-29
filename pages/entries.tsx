@@ -18,10 +18,26 @@ type Entry = {
   steps: number
 }
 
-// ✅ универсальный фикс для контракта
-// стало
-const CONTRACT_ADDRESS = (contractAddress as any).address as `0x${string}`
+// ✅ универсальный фикс + поддержка объекта { address: "0x..." }
+const CONTRACT_ADDRESS = ((contractAddress as any).address || contractAddress) as `0x${string}`
 
+// 🔒 безопасный вызов getDates (уменьшаем count при Out of bounds)
+async function safeGetDates(user: string, startIndex: number, count: number) {
+  try {
+    return (await readContract(config, {
+      address: CONTRACT_ADDRESS,
+      abi: abi,
+      functionName: "getDates",
+      args: [user, BigInt(startIndex), BigInt(count)]
+    })) as any as bigint[]
+  } catch (err: any) {
+    console.warn("getDates failed with count =", count, err)
+    if (count > 1) {
+      return safeGetDates(user, startIndex, Math.floor(count / 2))
+    }
+    return []
+  }
+}
 
 export default function EntriesPage() {
   const { address } = useAccount()
@@ -37,13 +53,7 @@ export default function EntriesPage() {
     setError(null)
 
     try {
-      // забираем даты пачкой
-      const dates = (await readContract(config, {
-        address: CONTRACT_ADDRESS,
-        abi: abi,
-        functionName: "getDates",
-        args: [address, BigInt(startIndex), BigInt(COUNT)]
-      })) as any as bigint[]
+      const dates = await safeGetDates(address, startIndex, COUNT)
 
       if (!dates || dates.length === 0) {
         setLoading(false)
@@ -69,7 +79,7 @@ export default function EntriesPage() {
       }
 
       setEntries(prev => [...prev, ...newEntries])
-      setStartIndex(prev => prev + COUNT)
+      setStartIndex(prev => prev + dates.length) // учитываем реальное количество
     } catch (err: any) {
       console.error(err)
       setError("Ошибка при загрузке данных")
