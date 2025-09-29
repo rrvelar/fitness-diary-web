@@ -1,10 +1,16 @@
-import { getDefaultConfig } from "@rainbow-me/rainbowkit"
+import { createConfig, http } from "wagmi"
 import { base } from "wagmi/chains"
+import { getDefaultWallets } from "@rainbow-me/rainbowkit"
 
-// Если хочешь оставить только Base, убери остальные сети
-export const config = getDefaultConfig({
+const { connectors } = getDefaultWallets({
   appName: "Fitness Diary",
-  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "demo", // WalletConnect Project ID
+  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "",
+})
+
+export const config = createConfig({
   chains: [base],
-  ssr: true, // важно для Next.js
+  connectors,
+  transports: {
+    [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC_URL!), // ✅ теперь Alchemy
+  },
 })
