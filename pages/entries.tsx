@@ -44,25 +44,19 @@ export default function EntriesPage() {
           args: [address, d]
         })) as any
 
-        // 🟢 ЛОГИРУЕМ, чтобы увидеть реальную структуру
         console.log("RAW ENTRY from contract:", entry)
 
         // если пустая запись — пропускаем
-        if (
-          Number(entry[1]) === 0 &&
-          Number(entry[2]) === 0 &&
-          Number(entry[3]) === 0 &&
-          Number(entry[4]) === 0
-        ) {
+        if (!entry.exists) {
           continue
         }
 
         newEntries.push({
-          date: Number(entry[0]),          // YYYYMMDD
-          weight: Number(entry[1]) / 1000, // граммы → кг
-          caloriesIn: Number(entry[2]),
-          caloriesOut: Number(entry[3]),
-          steps: Number(entry[4])
+          date: Number(entry.date),
+          weight: Number(entry.weightGrams) / 1000,
+          caloriesIn: Number(entry.caloriesIn),
+          caloriesOut: Number(entry.caloriesOut),
+          steps: Number(entry.steps)
         })
       }
 
@@ -81,7 +75,7 @@ export default function EntriesPage() {
 
   const formatDate = (yyyymmdd: number) => {
     const str = String(yyyymmdd)
-    if (str.length !== 8) return str // fallback
+    if (str.length !== 8) return str
     return str.replace(/(\d{4})(\d{2})(\d{2})/, (_, y, m, d) => `${d}/${m}/${y}`)
   }
 
