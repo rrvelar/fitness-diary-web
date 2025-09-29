@@ -4,11 +4,11 @@
 
 import { useEffect, useState } from "react"
 import { readContract } from "@wagmi/core"
-import { config } from "@/lib/wagmi"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import abi from "@/abi/FitnessDiary.json"
-import contractAddress from "@/abi/FitnessDiary.address.json"
+import { config } from "../../lib/wagmi"
+import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card"
+import { Button } from "../../components/ui/button"
+import abi from "../../abi/FitnessDiary.json"
+import contractAddress from "../../abi/FitnessDiary.address.json"
 import { useAccount } from "wagmi"
 
 type Entry = {
