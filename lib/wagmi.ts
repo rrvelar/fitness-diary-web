@@ -1,6 +1,5 @@
 import { createConfig, http } from "wagmi"
 import { base } from "wagmi/chains"
-import { getDefaultWallets } from "@rainbow-me/rainbowkit"
 
 const { connectors } = getDefaultWallets({
   appName: "Fitness Diary",
