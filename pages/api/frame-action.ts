@@ -1,4 +1,3 @@
-import type { NextApiRequest, NextApiResponse } from "next"
 import { createFrames } from "frames.js/next"
 
 const frames = createFrames({
@@ -9,7 +8,7 @@ export default frames(async (ctx) => {
   const action = ctx.searchParams.action
 
   if (action === "entries") {
-    // 🔹 В реальном проекте тут достаём последние записи из контракта
+    // Здесь в реале можно доставать данные из контракта
     return {
       image: (
         <div style={{ fontSize: 28, color: "black", padding: 40 }}>
@@ -18,9 +17,7 @@ export default frames(async (ctx) => {
           <br />• 79.5 кг — 2400/3100 кал, 11000 шагов
         </div>
       ),
-      buttons: [
-        { label: "🔙 Назад", action: "post", target: "/api/frame" },
-      ],
+      buttons: [{ label: "🔙 Назад", action: "post", target: "/api/frame" }],
     }
   }
 
@@ -32,34 +29,32 @@ export default frames(async (ctx) => {
         </div>
       ),
       textInput: "Например: 79.3, 2500, 3000, 12000",
-      buttons: [
-        { label: "✅ Сохранить", action: "post", target: "/api/frame?action=save" },
-      ],
+      buttons: [{ label: "✅ Сохранить", action: "post", target: "/api/frame?action=save" }],
     }
   }
 
   if (action === "save") {
-    // 🔹 Тут надо распарсить ctx.messageInput и записать в контракт
+    // Здесь ты можешь распарсить ctx.messageInput и сделать запись в контракт
     return {
       image: (
         <div style={{ fontSize: 28, color: "green", padding: 40 }}>
           Запись сохранена ✅
         </div>
       ),
-      buttons: [
-        { label: "🔙 Назад", action: "post", target: "/api/frame" },
-      ],
+      buttons: [{ label: "🔙 Назад", action: "post", target: "/api/frame" }],
     }
   }
 
+  // 🔹 Фоллбек: главное меню
   return {
     image: (
       <div style={{ fontSize: 28, color: "black", padding: 40 }}>
-        Неизвестное действие
+        👋 Добро пожаловать в Fitness Diary
       </div>
     ),
     buttons: [
-      { label: "🔙 Назад", action: "post", target: "/api/frame" },
+      { label: "📖 Мои записи", action: "post", target: "/api/frame?action=entries" },
+      { label: "➕ Добавить", action: "post", target: "/api/frame?action=log" },
     ],
   }
 })
