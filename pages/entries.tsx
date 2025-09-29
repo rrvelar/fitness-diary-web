@@ -21,33 +21,14 @@ type Entry = {
 // ✅ универсальный фикс + поддержка формата { "address": "0x..." }
 const CONTRACT_ADDRESS = ((contractAddress as any).address || contractAddress) as `0x${string}`
 
-// 🔒 безопасный вызов getDates (уменьшаем count при Out of bounds)
-async function safeGetDates(user: string, startIndex: number, count: number): Promise<bigint[]> {
-  try {
-    return (await readContract(config, {
-      address: CONTRACT_ADDRESS,
-      abi: abi,
-      functionName: "getDates",
-      args: [user, BigInt(startIndex), BigInt(count)]
-    })) as any as bigint[]
-  } catch (err: any) {
-    const message = String(err?.message || err)
-    console.warn(`getDates failed (count=${count}):`, message)
-
-    if (count > 1 && message.includes("Out of bounds")) {
-      return safeGetDates(user, startIndex, Math.floor(count / 2))
-    }
-    return []
-  }
-}
+// 🚧 временно: список дат жёстко задан
+const HARDCODED_DATES = [BigInt(20250911)]
 
 export default function EntriesPage() {
   const { address } = useAccount()
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [startIndex, setStartIndex] = useState(0)
-  const COUNT = 5 // 🔽 можно уменьшить, чтобы не ловить 429
 
   const loadEntries = async () => {
     if (!address) return
@@ -55,15 +36,8 @@ export default function EntriesPage() {
     setError(null)
 
     try {
-      const dates = await safeGetDates(address, startIndex, COUNT)
-
-      if (!dates || dates.length === 0) {
-        setLoading(false)
-        return
-      }
-
       const newEntries: Entry[] = []
-      for (const d of dates) {
+      for (const d of HARDCODED_DATES) {
         const entry = (await readContract(config, {
           address: CONTRACT_ADDRESS,
           abi: abi,
@@ -71,7 +45,7 @@ export default function EntriesPage() {
           args: [address, d]
         })) as any
 
-        // ✅ фильтруем пустые записи (0,0,0,0)
+        // фильтруем пустые записи
         if (
           Number(entry[0]) === 0 &&
           Number(entry[1]) === 0 &&
@@ -90,8 +64,7 @@ export default function EntriesPage() {
         })
       }
 
-      setEntries(prev => [...prev, ...newEntries])
-      setStartIndex(prev => prev + dates.length) // увеличиваем offset на реальное количество
+      setEntries(newEntries)
     } catch (err: any) {
       console.error(err)
       setError("Ошибка при загрузке данных")
@@ -119,7 +92,11 @@ export default function EntriesPage() {
           <Card key={`${entry.date}-${i}`}>
             <CardHeader>
               <CardTitle>
-                {new Date(entry.date * 1000).toLocaleDateString()}
+                {new Date(
+                  entry.date.toString().slice(0, 4) + "-" +
+                  entry.date.toString().slice(4, 6) + "-" +
+                  entry.date.toString().slice(6, 8)
+                ).toLocaleDateString()}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1 text-sm">
@@ -132,7 +109,7 @@ export default function EntriesPage() {
         ))}
 
         {loading &&
-          Array.from({ length: 3 }).map((_, i) => (
+          Array.from({ length: 1 }).map((_, i) => (
             <Card key={`skeleton-${i}`}>
               <CardHeader>
                 <Skeleton className="h-5 w-32" />
@@ -147,7 +124,7 @@ export default function EntriesPage() {
       </div>
 
       {!loading && entries.length > 0 && (
-        <Button onClick={loadEntries}>Показать ещё</Button>
+        <Button onClick={loadEntries}>Обновить</Button>
       )}
     </div>
   )
