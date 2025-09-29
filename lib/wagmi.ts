@@ -2,12 +2,12 @@ import { createConfig, http } from "wagmi"
 import { base } from "wagmi/chains"
 
 // 🌈 RainbowKit
+import { connectorsForWallets } from "@rainbow-me/rainbowkit"
 import {
-  connectorsForWallets,
   metaMaskWallet,
   coinbaseWallet,
   walletConnectWallet,
-} from "@rainbow-me/rainbowkit"
+} from "@rainbow-me/rainbowkit/wallets"
 
 // =========================
 // 1. Конфиг для клиента (RainbowKit)
