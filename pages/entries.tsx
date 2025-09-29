@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react"
 import { readContract } from "@wagmi/core"
 import { useAccount } from "wagmi"
+import { config } from "../lib/wagmi"
 import abi from "../abi/FitnessDiary.json"
 import contractAddress from "../abi/FitnessDiary.address.json"
-import { config } from "../lib/wagmi"
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { ArrowUpCircle, ArrowDownCircle, Flame, Footprints } from "lucide-react"
 
+const CONTRACT_ADDRESS = contractAddress.address as unknown as `0x${string}`
 
 type Entry = {
   date: number
@@ -15,110 +16,105 @@ type Entry = {
   caloriesIn: number
   caloriesOut: number
   steps: number
+  exists: boolean
 }
-
-const CONTRACT_ADDRESS = contractAddress.address as unknown as `0x${string}`
 
 export default function EntriesPage() {
   const { address } = useAccount()
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(false)
+  const [count, setCount] = useState(5)
+
+  useEffect(() => {
+    if (!address) return
+    fetchEntries()
+  }, [address, count])
+
+  // универсальный фикс для getDates
+  async function safeGetDates(addr: `0x${string}`, count: bigint) {
+    while (count > 0n) {
+      try {
+        const result = await readContract(config, {
+          abi,
+          address: CONTRACT_ADDRESS,
+          functionName: "getDates",
+          args: [addr, 0n, count],
+        }) as bigint[]
+        return result
+      } catch (err: any) {
+        if (err.message.includes("Out of bounds")) {
+          count -= 1n
+        } else {
+          throw err
+        }
+      }
+    }
+    return []
+  }
 
   async function fetchEntries() {
-    if (!address) return
-
-    setLoading(true)
     try {
-      let count = 10
-      let dates: number[] = []
+      setLoading(true)
 
-      try {
-        dates = (await readContract(config, {
-          abi,
-          address: CONTRACT_ADDRESS,
-          functionName: "getDates",
-          args: [address, 0, count],
-        })) as number[]
-      } catch (err) {
-        console.warn("Первый вызов getDates дал ошибку, пробуем меньше count", err)
-        count = 5
-        dates = (await readContract(config, {
-          abi,
-          address: CONTRACT_ADDRESS,
-          functionName: "getDates",
-          args: [address, 0, count],
-        })) as number[]
-      }
+      const datesBigInt = await safeGetDates(address as `0x${string}`, BigInt(count))
+      const dates = datesBigInt.map(d => Number(d))
 
-      const entriesData: Entry[] = []
-      for (const d of dates) {
-        const rawEntry = await readContract(config, {
+      const fetched: Entry[] = []
+      for (let d of dates) {
+        const entry = await readContract(config, {
           abi,
           address: CONTRACT_ADDRESS,
           functionName: "getEntry",
-          args: [address, d],
-        })
+          args: [address, BigInt(d)],
+        }) as unknown as Entry
 
-        if (rawEntry && (rawEntry as any).exists) {
-          entriesData.push({
-            date: Number((rawEntry as any).date),
-            weightGrams: Number((rawEntry as any).weightGrams),
-            caloriesIn: Number((rawEntry as any).caloriesIn),
-            caloriesOut: Number((rawEntry as any).caloriesOut),
-            steps: Number((rawEntry as any).steps),
+        if (entry.exists) {
+          fetched.push({
+            ...entry,
+            date: Number(entry.date),
+            weightGrams: Number(entry.weightGrams),
+            caloriesIn: Number(entry.caloriesIn),
+            caloriesOut: Number(entry.caloriesOut),
+            steps: Number(entry.steps),
           })
         }
       }
 
-      setEntries(entriesData)
-    } catch (error) {
-      console.error("fetchEntries error", error)
+      setEntries(fetched.reverse())
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => {
-    if (address) {
-      fetchEntries()
-    }
-  }, [address])
+  function formatDate(num: number) {
+    const str = num.toString()
+    return `${str.slice(6, 8)}/${str.slice(4, 6)}/${str.slice(0, 4)}`
+  }
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold text-center mb-6">Мои записи</h1>
+    <div className="flex flex-col items-center p-6 space-y-6">
+      <h1 className="text-3xl font-bold text-emerald-600">Мои записи</h1>
 
-      {loading ? (
-        <p className="text-center">Загрузка...</p>
-      ) : entries.length === 0 ? (
-        <p className="text-center text-gray-500">Нет записей</p>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {entries.map((entry, i) => {
-            const dateStr = entry.date
-              ? new Date(
-                  String(entry.date).slice(0, 4) +
-                    "-" +
-                    String(entry.date).slice(4, 6) +
-                    "-" +
-                    String(entry.date).slice(6, 8)
-                ).toLocaleDateString("ru-RU")
-              : "Invalid Date"
+      <Card className="w-full max-w-2xl p-4">
+        <CardHeader>
+          <CardTitle className="text-lg">История</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading && <p>Загрузка...</p>}
+          {!loading && entries.length === 0 && <p className="text-gray-500">Записей пока нет</p>}
 
-            const prev = i > 0 ? entries[i - 1] : null
-            const weightDiff =
-              prev && entry.weightGrams
-                ? (entry.weightGrams - prev.weightGrams) / 1000
-                : 0
+          <div className="space-y-4">
+            {entries.map((entry, i) => {
+              const prev = entries[i + 1]
+              const weightDiff = prev ? (entry.weightGrams - prev.weightGrams) / 1000 : 0
 
-            return (
-              <Card key={i} className="shadow-md border border-gray-200">
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold">{dateStr}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm">
-                  <p className="flex items-center gap-2">
-                    Вес: {(entry.weightGrams / 1000).toFixed(1)} кг
+              return (
+                <div key={i} className="border rounded-lg p-4 shadow-sm bg-white">
+                  <p className="text-sm text-gray-600">{formatDate(entry.date)}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">
+                      Вес: {(entry.weightGrams / 1000).toFixed(1)} кг
+                    </p>
                     {weightDiff !== 0 &&
                       (weightDiff > 0 ? (
                         <ArrowUpCircle
@@ -131,31 +127,31 @@ export default function EntriesPage() {
                           aria-label={`${weightDiff.toFixed(1)} кг`}
                         />
                       ))}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <Flame className="text-orange-500 w-4 h-4" />
-                    Калории (вход): {entry.caloriesIn}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <Flame className="text-blue-500 w-4 h-4" />
-                    Калории (расход): {entry.caloriesOut}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <Footprints className="text-green-600 w-4 h-4" />
-                    Шаги: {entry.steps}
-                  </p>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
+                  </div>
+                  <div className="flex gap-4 text-sm mt-1">
+                    <span className="flex items-center gap-1 text-gray-700">
+                      <Flame className="w-4 h-4 text-orange-500" />
+                      {entry.caloriesIn}/{entry.caloriesOut}
+                    </span>
+                    <span className="flex items-center gap-1 text-gray-700">
+                      <Footprints className="w-4 h-4 text-blue-500" />
+                      {entry.steps}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
 
-      <div className="flex justify-center mt-6">
-        <Button onClick={fetchEntries} disabled={loading}>
-          {loading ? "Обновляю..." : "Обновить"}
-        </Button>
-      </div>
+          {entries.length >= count && (
+            <div className="flex justify-center mt-4">
+              <Button onClick={() => setCount(count + 5)} className="bg-emerald-500 hover:bg-emerald-600 text-white">
+                Показать ещё
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
