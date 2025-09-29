@@ -1,59 +1,56 @@
-import { NextApiRequest, NextApiResponse } from "next"
+import type { NextApiRequest, NextApiResponse } from "next"
 import { writeContract } from "@wagmi/core"
 import { config } from "../../lib/wagmi"
 import abi from "../../abi/FitnessDiary.json"
-import contractAddress from "../../abi/FitnessDiary.address.json"
 
-const CONTRACT_ADDRESS = contractAddress.address as unknown as `0x${string}`
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    res.status(405).json({ error: "Method not allowed" })
-    return
-  }
-
   try {
-    const { date, weight, caloriesIn, caloriesOut, steps } = req.body
+    const { untrustedData } = req.body
+    const input = untrustedData?.inputText as string
 
-    if (!date || !weight || !caloriesIn || !caloriesOut || !steps) {
-      res.status(400).json({ error: "Missing fields" })
-      return
+    if (!input) {
+      return res.status(400).json({ error: "Нет данных" })
     }
 
-    const ymd = date.toString().replaceAll("-", "")
+    // формат: 20250929,75.5,2000,1800,8000
+    const [dateStr, weightStr, caloriesIn, caloriesOut, steps] = input.split(",")
+    const date = Number(dateStr)
+    const weightGrams = Math.round(Number(weightStr) * 1000)
 
-    // запись в контракт
     await writeContract(config, {
       abi,
       address: CONTRACT_ADDRESS,
       functionName: "logEntry",
       args: [
-        Number(ymd),
-        Math.round(Number(weight) * 1000),
+        date,
+        weightGrams,
         Number(caloriesIn),
         Number(caloriesOut),
         Number(steps),
       ],
     })
 
+    // ответ Frame
+    res.setHeader("Content-Type", "text/html")
     res.status(200).send(`
+      <!DOCTYPE html>
       <html>
-        <body style="text-align:center; padding:20px; font-family:sans-serif;">
-          <h2>✅ Запись успешно добавлена!</h2>
-          <a href="/api/frame">Добавить ещё</a>
-        </body>
+        <head>
+          <meta property="og:title" content="Запись добавлена!" />
+          <meta property="og:description" content="✅ Успешно сохранено в Fitness Diary" />
+          <meta property="og:image" content="https://your-app.vercel.app/success.png" />
+          <meta name="fc:frame" content="vNext" />
+          <meta name="fc:frame:button:1" content="📖 Открыть дневник" />
+          <meta name="fc:frame:button:1:action" content="link" />
+          <meta name="fc:frame:button:1:target" content="https://your-app.vercel.app/entries" />
+        </head>
+        <body>✅ Запись добавлена</body>
       </html>
     `)
-  } catch (err: any) {
-    console.error("Ошибка:", err)
-    res.status(500).send(`
-      <html>
-        <body style="text-align:center; padding:20px; font-family:sans-serif; color:red;">
-          <h2>❌ Ошибка при добавлении записи</h2>
-          <p>${err.message}</p>
-          <a href="/api/frame">Назад</a>
-        </body>
-      </html>
-    `)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: "Ошибка при записи" })
   }
 }
