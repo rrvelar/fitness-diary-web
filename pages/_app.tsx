@@ -1,57 +1,74 @@
-import "@rainbow-me/rainbowkit/styles.css"
-import { WagmiProvider } from "wagmi"
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { RainbowKitProvider } from "@rainbow-me/rainbowkit"
-import { wagmiClientConfig } from "../lib/wagmi"
-import "../styles/globals.css"
-import type { AppProps } from "next/app"
-import Layout from "../components/Layout"
-import { useEffect } from "react"
+// pages/_app.tsx
+import "@rainbow-me/rainbowkit/styles.css";
+import { WagmiProvider } from "wagmi";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
+import { wagmiClientConfig } from "../lib/wagmi";
+import "../styles/globals.css";
+import type { AppProps } from "next/app";
+import { useEffect } from "react";
+import { useRouter } from "next/router";
+// ⚠️ проверь путь: если у тебя Layout в components/ui/Layout.tsx — измени импорт
+import Layout from "../components/ui/Layout";
 
-// === 🛠️ Объявляем глобальный объект для TypeScript ===
 declare global {
   interface Window {
     farcaster?: {
-      actions?: {
-        ready: () => void
-      }
-    }
+      actions?: { ready: () => void };
+      wallet?: {
+        getAccounts: () => Promise<string[]>;
+        sendTransaction: (tx: {
+          to: `0x${string}`;
+          data?: `0x${string}`;
+          value?: `0x${string}`;
+        }) => Promise<`0x${string}`>;
+        signTypedData: (typedData: unknown) => Promise<`0x${string}`>;
+      };
+    };
   }
 }
 
-// === 1. Компонент, вызывающий ready() ===
 function WarpcastReady() {
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      // Если SDK ещё не загружен — добавляем <script>
-      if (!window.farcaster) {
-        const script = document.createElement("script")
-        script.src = "https://www.unpkg.com/@farcaster/mini/dist/sdk.min.js"
-        script.async = true
-        script.onload = () => {
-          if (window.farcaster?.actions?.ready) {
-            window.farcaster.actions.ready()
-            console.log("✅ Farcaster SDK ready (script loaded)")
-          }
-        }
-        document.body.appendChild(script)
-      } else {
-        // Если SDK уже есть
-        if (window.farcaster?.actions?.ready) {
-          window.farcaster.actions.ready()
-          console.log("✅ Farcaster SDK ready (already available)")
-        }
-      }
-    }
-  }, [])
+    if (typeof window === "undefined") return;
 
-  return null
+    const callReady = () => {
+      try {
+        window.farcaster?.actions?.ready?.();
+        console.log("✅ Farcaster SDK ready");
+      } catch {}
+    };
+
+    if (!window.farcaster) {
+      const s = document.createElement("script");
+      s.src = "https://warpcast.com/sdk/v2";
+      s.async = true;
+      s.onload = callReady;
+      document.body.appendChild(s);
+    } else {
+      callReady();
+    }
+  }, []);
+  return null;
 }
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
-// === 2. Основной App ===
 export default function App({ Component, pageProps }: AppProps) {
+  const router = useRouter();
+  const isMiniApp = router.pathname.startsWith("/frame"); // все страницы мини-аппа начинаются с /frame
+
+  if (isMiniApp) {
+    // 🚫 НИКАКОГО WalletConnect/RainbowKit внутри Warpcast
+    return (
+      <>
+        <WarpcastReady />
+        <Component {...pageProps} />
+      </>
+    );
+  }
+
+  // 🌍 Полноценная веб-версия — как было
   return (
     <WagmiProvider config={wagmiClientConfig}>
       <QueryClientProvider client={queryClient}>
@@ -63,5 +80,5 @@ export default function App({ Component, pageProps }: AppProps) {
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
-  )
+  );
 }
