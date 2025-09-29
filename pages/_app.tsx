@@ -8,6 +8,7 @@ import type { AppProps } from "next/app"
 import Layout from "../components/Layout"
 
 const qc = new QueryClient()
+const queryClient = new QueryClient()
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
