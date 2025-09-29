@@ -4,9 +4,10 @@ import { useAccount } from "wagmi"
 import abi from "../abi/FitnessDiary.json"
 import contractAddress from "../abi/FitnessDiary.address.json"
 import { config } from "../lib/wagmi"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
+import { Button } from "../components/ui/button"
 import { ArrowUpCircle, ArrowDownCircle, Flame, Footprints } from "lucide-react"
+
 
 type Entry = {
   date: number
