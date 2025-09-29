@@ -8,7 +8,8 @@ import "../styles/globals.css"
 import type { AppProps } from "next/app"
 import { useEffect } from "react"
 import { useRouter } from "next/router"
-import Layout from "../components/Layout"
+// ⚠️ у тебя Layout лежит в components/ui/Layout.tsx
+import Layout from "../components/ui/Layout"
 
 declare global {
   interface Window {
@@ -58,6 +59,7 @@ export default function App({ Component, pageProps }: AppProps) {
   const isMiniApp = router.pathname.startsWith("/frame")
 
   if (isMiniApp) {
+    // 🚫 Мини-дапы работают ТОЛЬКО с farcaster.sdk, без Wagmi/RainbowKit
     return (
       <>
         <WarpcastReady />
@@ -66,6 +68,7 @@ export default function App({ Component, pageProps }: AppProps) {
     )
   }
 
+  // 🌍 Полная версия сайта с Metamask/WalletConnect
   return (
     <WagmiProvider config={wagmiClientConfig}>
       <QueryClientProvider client={queryClient}>
