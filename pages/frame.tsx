@@ -37,12 +37,6 @@ export default function Frame() {
 
     if (!haveAll) return
 
-    const wallet = sdk.wallet
-    if (!wallet?.sendTransaction) {
-      setStatus("⚠️ Встроенный кошелёк Warpcast недоступен")
-      return
-    }
-
     sentRef.current = true
     ;(async () => {
       try {
@@ -60,7 +54,8 @@ export default function Frame() {
           args: [ymd, w, ci, co, st],
         })
 
-        const txHash = await wallet.sendTransaction({
+        // ✅ вызываем напрямую sdk.wallet.sendTransaction
+        const txHash = await sdk.wallet.sendTransaction({
           to: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
           data,
           value: "0x0",
