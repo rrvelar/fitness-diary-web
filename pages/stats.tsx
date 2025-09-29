@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { readContract } from "@wagmi/core"
 import { useAccount } from "wagmi"
-import { config } from "../lib/wagmi"
+import { wagmiClientConfig } from "../lib/wagmi"   // ✅ исправлено
 import abi from "../abi/FitnessDiary.json"
 import contractAddress from "../abi/FitnessDiary.address.json"
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
@@ -31,7 +31,7 @@ export default function StatsPage() {
     let count = 20n
     while (count > 0n) {
       try {
-        return await readContract(config, {
+        return await readContract(wagmiClientConfig, {   // ✅ исправлено
           abi,
           address: CONTRACT_ADDRESS,
           functionName: "getDates",
@@ -50,7 +50,7 @@ export default function StatsPage() {
     const dates = datesBigInt.map(d => Number(d))
     const fetched: Entry[] = []
     for (let d of dates) {
-      const entry = await readContract(config, {
+      const entry = await readContract(wagmiClientConfig, {   // ✅ исправлено
         abi,
         address: CONTRACT_ADDRESS,
         functionName: "getEntry",
