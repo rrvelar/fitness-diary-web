@@ -53,7 +53,7 @@ export default frames(async (ctx) => {
   if (action === "save") {
     try {
       const input = ctx.message?.inputText || "" // строка от пользователя
-      const parts = input.split(",").map((p) => p.trim())
+      const parts = input.split(",").map((p: string) => p.trim()) // <-- ✅ фикс
 
       if (parts.length < 5) {
         throw new Error("Недостаточно данных")
