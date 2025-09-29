@@ -97,10 +97,10 @@ export default function EntriesPage() {
 
       <Card className="w-full max-w-2xl p-4">
         <CardHeader>
-          <CardTitle className="text-lg">История</CardTitle>
+          <CardTitle className="text-lg text-gray-800">История</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading && <p>Загрузка...</p>}
+          {loading && <p className="text-gray-500">Загрузка...</p>}
           {!loading && entries.length === 0 && <p className="text-gray-500">Записей пока нет</p>}
 
           <div className="space-y-4">
@@ -109,10 +109,14 @@ export default function EntriesPage() {
               const weightDiff = prev ? (entry.weightGrams - prev.weightGrams) / 1000 : 0
 
               return (
-                <div key={i} className="border rounded-lg p-4 shadow-sm bg-white">
-                  <p className="text-sm text-gray-600">{formatDate(entry.date)}</p>
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium">
+                <div
+                  key={i}
+                  className="border rounded-lg p-4 shadow bg-gray-50 hover:shadow-md transition"
+                >
+                  <p className="text-sm text-gray-500 mb-1">{formatDate(entry.date)}</p>
+
+                  <div className="flex items-center gap-2 mb-2">
+                    <p className="font-semibold text-gray-800">
                       Вес: {(entry.weightGrams / 1000).toFixed(1)} кг
                     </p>
                     {weightDiff !== 0 &&
@@ -128,13 +132,18 @@ export default function EntriesPage() {
                         />
                       ))}
                   </div>
-                  <div className="flex gap-4 text-sm mt-1">
-                    <span className="flex items-center gap-1 text-gray-700">
-                      <Flame className="w-4 h-4 text-orange-500" />
-                      {entry.caloriesIn}/{entry.caloriesOut}
+
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <span className="flex items-center gap-1 text-orange-600 font-medium">
+                      <Flame className="w-4 h-4" />
+                      {entry.caloriesIn}
                     </span>
-                    <span className="flex items-center gap-1 text-gray-700">
-                      <Footprints className="w-4 h-4 text-blue-500" />
+                    <span className="flex items-center gap-1 text-blue-600 font-medium">
+                      <Flame className="w-4 h-4" />
+                      {entry.caloriesOut}
+                    </span>
+                    <span className="flex items-center gap-1 text-green-600 font-medium">
+                      <Footprints className="w-4 h-4" />
                       {entry.steps}
                     </span>
                   </div>
@@ -145,7 +154,10 @@ export default function EntriesPage() {
 
           {entries.length >= count && (
             <div className="flex justify-center mt-4">
-              <Button onClick={() => setCount(count + 5)} className="bg-emerald-500 hover:bg-emerald-600 text-white">
+              <Button
+                onClick={() => setCount(count + 5)}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white"
+              >
                 Показать ещё
               </Button>
             </div>
