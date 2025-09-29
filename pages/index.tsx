@@ -3,7 +3,7 @@ import Link from "next/link"
 import Head from "next/head"
 import { readContract } from "@wagmi/core"
 import { useAccount } from "wagmi"
-import { wagmiClientConfig } from "../lib/wagmi"   // ✅ правильный импорт
+import { wagmiClientConfig } from "../lib/wagmi"
 import abi from "../abi/FitnessDiary.json"
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
 import { Button } from "../components/ui/button"
@@ -35,12 +35,12 @@ export default function HomePage() {
     let count = 10n
     while (count > 0n) {
       try {
-        const result = await readContract(wagmiClientConfig, {
+        const result = (await readContract(wagmiClientConfig, {
           abi,
           address: CONTRACT_ADDRESS,
           functionName: "getDates",
           args: [addr, 0n, count],
-        }) as bigint[]
+        })) as bigint[]
         return result
       } catch (err: any) {
         if (err.message.includes("Out of bounds")) {
@@ -61,12 +61,12 @@ export default function HomePage() {
 
       const fetched: Entry[] = []
       for (let d of dates.slice(-3)) {
-        const entry = await readContract(wagmiClientConfig, {
+        const entry = (await readContract(wagmiClientConfig, {
           abi,
           address: CONTRACT_ADDRESS,
           functionName: "getEntry",
           args: [address, BigInt(d)],
-        }) as unknown as Entry
+        })) as unknown as Entry
 
         if (entry.exists) {
           fetched.push({
@@ -99,21 +99,10 @@ export default function HomePage() {
     <>
       <Head>
         <title>Fitness Diary</title>
-        <meta property="og:title" content="Fitness Diary Frame" />
-        <meta property="og:description" content="Добавь запись прямо из Warpcast" />
+        {/* OG-теги только для соцсетей */}
+        <meta property="og:title" content="Fitness Diary" />
+        <meta property="og:description" content="Onchain дневник: вес, калории и шаги" />
         <meta property="og:image" content="https://fitness-diary-web.vercel.app/preview.png" />
-
-        {/* 🔑 Farcaster frame мета-теги */}
-        <meta property="fc:frame" content="vNext" />
-        <meta property="fc:frame:image" content="https://fitness-diary-web.vercel.app/preview.png" />
-
-        <meta property="fc:frame:button:1" content="📖 Мои записи" />
-        <meta property="fc:frame:button:1:action" content="post" />
-        <meta property="fc:frame:button:1:target" content="https://fitness-diary-web.vercel.app/api/frame-action?action=entries" />
-
-        <meta property="fc:frame:button:2" content="➕ Добавить" />
-        <meta property="fc:frame:button:2:action" content="post" />
-        <meta property="fc:frame:button:2:target" content="https://fitness-diary-web.vercel.app/api/frame-action?action=log" />
       </Head>
 
       <div className="flex flex-col items-center p-6 space-y-6">
