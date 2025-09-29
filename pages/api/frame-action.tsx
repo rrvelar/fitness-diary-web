@@ -1,12 +1,13 @@
 // pages/api/frame-action.tsx
+/* eslint-disable react/jsx-key */
 import React from "react"
-import { createFrames, Button } from "frames.js/next"
+import { createFrames, Button } from "frames.js/next/pages-router/server"
 
 const frames = createFrames({
   basePath: "/api/frame-action",
 })
 
-const handler = async (ctx: any) => {
+const handleRequest = frames(async (ctx: any) => {
   const action = ctx.searchParams?.action ?? ""
 
   if (action === "entries") {
@@ -19,10 +20,8 @@ const handler = async (ctx: any) => {
         </div>
       ),
       buttons: [
-        <Button key="back" action="post" target="/api/frame-action">
-          🔙 Назад
-        </Button>,
-      ] as unknown as [ReturnType<typeof Button>],
+        <Button action="post" target="/api/frame-action">🔙 Назад</Button>,
+      ],
     }
   }
 
@@ -37,10 +36,8 @@ const handler = async (ctx: any) => {
       ),
       textInput: "20250929,79.3,2500,3000,12000",
       buttons: [
-        <Button key="save" action="post" target="/api/frame-action?action=save">
-          ✅ Сохранить
-        </Button>,
-      ] as unknown as [ReturnType<typeof Button>],
+        <Button action="post" target="/api/frame-action?action=save">✅ Сохранить</Button>,
+      ],
     }
   }
 
@@ -56,10 +53,8 @@ const handler = async (ctx: any) => {
           </div>
         ),
         buttons: [
-          <Button key="back3" action="post" target="/api/frame-action">
-            🔙 Назад
-          </Button>,
-        ] as unknown as [ReturnType<typeof Button>],
+          <Button action="post" target="/api/frame-action">🔙 Назад</Button>,
+        ],
       }
     }
 
@@ -81,14 +76,12 @@ const handler = async (ctx: any) => {
         </div>
       ),
       buttons: [
-        <Button key="sign" action="link" target={url}>
-          🔗 Подписать во встроенном кошельке
-        </Button>,
-      ] as unknown as [ReturnType<typeof Button>],
+        <Button action="link" target={url}>🔗 Подписать во встроенном кошельке</Button>,
+      ],
     }
   }
 
-  // fallback — ОБЯЗАТЕЛЕН
+  // fallback
   return {
     image: (
       <div style={{ fontSize: 28, color: "black", padding: 40 }}>
@@ -96,14 +89,10 @@ const handler = async (ctx: any) => {
       </div>
     ),
     buttons: [
-      <Button key="entries" action="post" target="/api/frame-action?action=entries">
-        📖 Мои записи
-      </Button>,
-      <Button key="log" action="post" target="/api/frame-action?action=log">
-        ➕ Добавить
-      </Button>,
-    ] as unknown as [ReturnType<typeof Button>, ReturnType<typeof Button>],
+      <Button action="post" target="/api/frame-action?action=entries">📖 Мои записи</Button>,
+      <Button action="post" target="/api/frame-action?action=log">➕ Добавить</Button>,
+    ],
   }
-}
+})
 
-export default frames(handler)
+export default handleRequest
