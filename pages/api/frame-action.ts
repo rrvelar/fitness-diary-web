@@ -4,8 +4,7 @@ const frames = createFrames({
   basePath: "/api/frame",
 })
 
-// Типизируем обработчик правильно
-export default frames(async (ctx): Promise<ReturnType<typeof frames>> => {
+export default frames(async (ctx) => {
   const action = ctx.searchParams.action
 
   if (action === "entries") {
@@ -44,7 +43,7 @@ export default frames(async (ctx): Promise<ReturnType<typeof frames>> => {
     }
   }
 
-  // Главное меню (fallback)
+  // fallback — главное меню
   return {
     image: (
       <div style={{ fontSize: 28, color: "black", padding: 40 }}>
