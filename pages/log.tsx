@@ -9,7 +9,7 @@ import { config } from "../lib/wagmi"
 const CONTRACT_ADDRESS = contractAddress.address as unknown as `0x${string}`
 
 export default function LogPage() {
-  const { address, isConnected } = useAccount()
+  const { isConnected } = useAccount()
   const { writeContractAsync } = useWriteContract({ config })
 
   const [date, setDate] = useState("")
@@ -26,6 +26,11 @@ export default function LogPage() {
       return
     }
 
+    if (Number(weight) <= 0 || Number(caloriesIn) < 0 || Number(caloriesOut) < 0 || Number(steps) < 0) {
+      alert("Проверьте введённые значения")
+      return
+    }
+
     setLoading(true)
     try {
       const ymd = date.replaceAll("-", "")
@@ -35,14 +40,14 @@ export default function LogPage() {
         functionName: "logEntry",
         args: [
           Number(ymd),
-          Math.round(Number(weight) * 1000),
+          Math.round(Number(weight) * 1000), // кг → граммы
           Number(caloriesIn),
           Number(caloriesOut),
           Number(steps),
         ],
       })
 
-      alert("Запись успешно добавлена!")
+      alert("✅ Запись успешно добавлена!")
       setDate("")
       setWeight("")
       setCaloriesIn("")
@@ -50,7 +55,7 @@ export default function LogPage() {
       setSteps("")
     } catch (err) {
       console.error("Ошибка при добавлении записи:", err)
-      alert("Не удалось добавить запись")
+      alert("❌ Не удалось добавить запись")
     } finally {
       setLoading(false)
     }
@@ -58,7 +63,7 @@ export default function LogPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center py-10 px-4">
-      <Card className="w-full max-w-lg shadow-sm border border-gray-200">
+      <Card className="w-full max-w-lg shadow-md border border-gray-200">
         <CardHeader>
           <CardTitle className="text-xl font-semibold text-emerald-700 text-center">Новая запись</CardTitle>
         </CardHeader>
@@ -66,10 +71,10 @@ export default function LogPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {[
               { label: "Дата", type: "date", value: date, set: setDate },
-              { label: "Вес (кг)", type: "number", value: weight, set: setWeight },
-              { label: "Калории (вход)", type: "number", value: caloriesIn, set: setCaloriesIn },
-              { label: "Калории (расход)", type: "number", value: caloriesOut, set: setCaloriesOut },
-              { label: "Шаги", type: "number", value: steps, set: setSteps },
+              { label: "Вес (кг)", type: "number", value: weight, set: setWeight, step: "0.1", min: "0" },
+              { label: "Калории (вход)", type: "number", value: caloriesIn, set: setCaloriesIn, min: "0" },
+              { label: "Калории (расход)", type: "number", value: caloriesOut, set: setCaloriesOut, min: "0" },
+              { label: "Шаги", type: "number", value: steps, set: setSteps, min: "0" },
             ].map((f, i) => (
               <div key={i}>
                 <label className="block text-sm text-gray-600 mb-1">{f.label}</label>
@@ -78,13 +83,19 @@ export default function LogPage() {
                   value={f.value}
                   onChange={(e) => f.set(e.target.value)}
                   required
-                  className="w-full rounded-lg border px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  step={f.step}
+                  min={f.min}
+                  className="w-full rounded-lg border px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 transition"
                 />
               </div>
             ))}
 
-            <Button type="submit" className="w-full bg-emerald-500 hover:bg-emerald-600 text-white" disabled={loading}>
-              {loading ? "Сохраняю..." : "Добавить запись"}
+            <Button
+              type="submit"
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white transition"
+              disabled={loading}
+            >
+              {loading ? "⏳ Сохраняю..." : "➕ Добавить запись"}
             </Button>
           </form>
         </CardContent>
