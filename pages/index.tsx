@@ -30,19 +30,24 @@ export default function HomePage() {
     fetchEntries()
   }, [address])
 
+  // фикс Out of bounds
   async function safeGetDates(addr: `0x${string}`) {
     let count = 10n
     while (count > 0n) {
       try {
-        return await readContract(config, {
+        const result = await readContract(config, {
           abi,
           address: CONTRACT_ADDRESS,
           functionName: "getDates",
           args: [addr, 0n, count],
         }) as bigint[]
+        return result
       } catch (err: any) {
-        if (err.message.includes("Out of bounds")) count -= 1n
-        else throw err
+        if (err.message.includes("Out of bounds")) {
+          count -= 1n
+        } else {
+          throw err
+        }
       }
     }
     return []
@@ -53,8 +58,8 @@ export default function HomePage() {
       setLoading(true)
       const datesBigInt = await safeGetDates(address as `0x${string}`)
       const dates = datesBigInt.map(d => Number(d))
-      const fetched: Entry[] = []
 
+      const fetched: Entry[] = []
       for (let d of dates.slice(-3)) {
         const entry = await readContract(config, {
           abi,
@@ -91,7 +96,7 @@ export default function HomePage() {
   }))
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex flex-col items-center p-6 space-y-6">
+    <div className="flex flex-col items-center p-6 space-y-6">
       <h1 className="text-3xl font-bold text-emerald-700">Мой дневник фитнеса</h1>
 
       <Link href="/log">
@@ -100,9 +105,9 @@ export default function HomePage() {
         </Button>
       </Link>
 
-      <Card className="w-full max-w-2xl shadow-sm border border-gray-200">
+      <Card className="w-full max-w-2xl">
         <CardHeader>
-          <CardTitle className="text-xl font-semibold text-emerald-700">Динамика веса</CardTitle>
+          <CardTitle className="text-lg text-emerald-700">Динамика веса</CardTitle>
         </CardHeader>
         <CardContent>
           {chartData.length > 0 ? (
@@ -111,7 +116,7 @@ export default function HomePage() {
                 <XAxis dataKey="date" />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="weight" stroke="#059669" strokeWidth={2} />
+                <Line type="monotone" dataKey="weight" stroke="#10b981" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           ) : (
@@ -120,20 +125,20 @@ export default function HomePage() {
         </CardContent>
       </Card>
 
-      <Card className="w-full max-w-2xl shadow-sm border border-gray-200">
+      <Card className="w-full max-w-2xl">
         <CardHeader>
-          <CardTitle className="text-xl font-semibold text-emerald-700">Последние записи</CardTitle>
+          <CardTitle className="text-lg text-emerald-700">Последние записи</CardTitle>
         </CardHeader>
         <CardContent>
           {loading && <p>Загрузка...</p>}
           {!loading && entries.length === 0 && <p className="text-gray-500">Записей пока нет</p>}
           <div className="space-y-4">
             {entries.map((entry, i) => (
-              <div key={i} className="border rounded-lg p-3 shadow-sm bg-white hover:shadow-md transition">
+              <div key={i} className="border rounded-lg p-3 shadow-sm bg-white">
                 <p className="text-sm text-gray-600">{formatDate(entry.date)}</p>
-                <p className="font-medium text-gray-800">Вес: {(entry.weightGrams / 1000).toFixed(1)} кг</p>
-                <p className="text-sm text-gray-700">Калории: {entry.caloriesIn} / {entry.caloriesOut}</p>
-                <p className="text-sm text-gray-700">Шаги: {entry.steps}</p>
+                <p className="font-medium">Вес: {(entry.weightGrams / 1000).toFixed(1)} кг</p>
+                <p className="text-sm">Калории: {entry.caloriesIn} / {entry.caloriesOut}</p>
+                <p className="text-sm">Шаги: {entry.steps}</p>
               </div>
             ))}
           </div>
