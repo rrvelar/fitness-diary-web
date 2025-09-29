@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react"
+import { useAccount } from "wagmi"
 import { readContract } from "@wagmi/core"
-import { config } from "../lib/wagmi"
 import abi from "../abi/FitnessDiary.json"
 import contractAddress from "../abi/FitnessDiary.address.json"
-import { useAccount } from "wagmi"
-import { Flame, Footprints, ArrowUpCircle, ArrowDownCircle } from "lucide-react"
+import { config } from "../lib/wagmi"
+import { Dumbbell, Flame, Footprints, Scale } from "lucide-react"
+
+// ✅ универсальный фикс адреса
+const CONTRACT_ADDRESS = (
+  (contractAddress as any)?.address || (contractAddress as any)
+) as `0x${string}`
 
 type Entry = {
   date: number
@@ -15,126 +20,101 @@ type Entry = {
   exists: boolean
 }
 
-// если JSON выглядит как { "address": "0x...." }
-const CONTRACT_ADDRESS = (contractAddress as { address: string }).address as `0x${string}`
-
-
 export default function EntriesPage() {
   const { address } = useAccount()
   const [entries, setEntries] = useState<Entry[]>([])
-  const [startIndex, setStartIndex] = useState(0)
   const [loading, setLoading] = useState(false)
 
-  const fetchEntries = async () => {
+  useEffect(() => {
     if (!address) return
-    setLoading(true)
-    try {
-      // --- фикс: возвращает bigint[], конвертим в number[]
-      const datesBigInt = await readContract(config, {
-        abi,
-        address: CONTRACT_ADDRESS,
-        functionName: "getDates",
-        args: [address, BigInt(startIndex), BigInt(5)],
-      }) as bigint[]
-
-      const dates: number[] = datesBigInt.map(d => Number(d))
-
-      const newEntries: Entry[] = []
-      for (const d of dates) {
-        const entry = await readContract(config, {
+    const fetchEntries = async () => {
+      setLoading(true)
+      try {
+        const dates = (await readContract(config, {
           abi,
           address: CONTRACT_ADDRESS,
-          functionName: "getEntry",
-          args: [address, BigInt(d)],
-        })
-        newEntries.push(entry as Entry)
+          functionName: "getDates",
+          args: [address, 0, 10],
+        })) as number[]
+
+        const result: Entry[] = []
+        for (const d of dates) {
+          const raw = (await readContract(config, {
+            abi,
+            address: CONTRACT_ADDRESS,
+            functionName: "getEntry",
+            args: [address, d],
+          })) as any
+
+          result.push({
+            date: Number(raw.date),
+            weightGrams: Number(raw.weightGrams),
+            caloriesIn: Number(raw.caloriesIn),
+            caloriesOut: Number(raw.caloriesOut),
+            steps: Number(raw.steps),
+            exists: raw.exists,
+          })
+        }
+
+        setEntries(result.filter((e) => e.exists))
+      } catch (e) {
+        console.error("fetchEntries error", e)
+      } finally {
+        setLoading(false)
       }
-
-      setEntries((prev) => [...prev, ...newEntries])
-      setStartIndex(startIndex + 5)
-    } catch (err) {
-      console.error("fetchEntries error", err)
-    } finally {
-      setLoading(false)
     }
-  }
-
-  useEffect(() => {
     fetchEntries()
   }, [address])
 
-  const formatDate = (raw: number) => {
-    const str = raw.toString()
-    const year = str.slice(0, 4)
-    const month = str.slice(4, 6)
-    const day = str.slice(6, 8)
-    return `${day}/${month}/${year}`
-  }
-
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6 text-center text-emerald-700">
-        Мои записи
-      </h1>
+    <div className="min-h-[90vh] bg-gradient-to-b from-green-50 to-white py-10 px-4">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold text-emerald-700 mb-8 text-center">
+          Мои записи
+        </h1>
 
-      <div className="space-y-6">
-        {entries.map((e, idx) => (
-          <div
-            key={idx}
-            className="bg-white shadow-md rounded-xl p-6 border border-gray-100 hover:shadow-lg transition"
-          >
-            <h2 className="text-lg font-semibold mb-2 text-blue-700">
-              {formatDate(e.date)}
-            </h2>
+        {loading && (
+          <p className="text-center text-gray-500">Загрузка...</p>
+        )}
 
-            <p className="flex items-center text-gray-700 font-medium">
-              {e.weightGrams / 1000} кг
-              {idx > 0 && (() => {
-                const prev = entries[idx - 1].weightGrams / 1000
-                const diff = e.weightGrams / 1000 - prev
-                if (diff > 0)
-                  return (
-                    <span title={`+${diff.toFixed(1)} кг`}>
-                      <ArrowUpCircle className="text-red-500 w-5 h-5 ml-2" />
-                    </span>
-                  )
-                if (diff < 0)
-                  return (
-                    <span title={`${diff.toFixed(1)} кг`}>
-                      <ArrowDownCircle className="text-green-500 w-5 h-5 ml-2" />
-                    </span>
-                  )
-                return null
-              })()}
-            </p>
-
-            <p className="flex items-center text-gray-600 mt-2">
-              <Flame className="w-4 h-4 mr-2 text-orange-500" /> Вход:{" "}
-              <b>{e.caloriesIn}</b>
-            </p>
-            <p className="flex items-center text-gray-600 mt-1">
-              <Flame className="w-4 h-4 mr-2 text-blue-500" /> Расход:{" "}
-              <b>{e.caloriesOut}</b>
-            </p>
-            <p className="flex items-center text-gray-600 mt-1">
-              <Footprints className="w-4 h-4 mr-2 text-green-500" /> Шаги:{" "}
-              <b>{e.steps}</b>
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {address && (
-        <div className="flex justify-center mt-8">
-          <button
-            onClick={fetchEntries}
-            disabled={loading}
-            className="px-6 py-2 bg-emerald-600 text-white rounded-lg shadow hover:bg-emerald-700 disabled:bg-gray-400 transition"
-          >
-            {loading ? "Загрузка..." : "Показать ещё"}
-          </button>
+        <div className="space-y-6">
+          {entries.map((e) => {
+            const dateStr = String(e.date)
+            const formatted = `${dateStr.slice(6, 8)}/${dateStr.slice(
+              4,
+              6
+            )}/${dateStr.slice(0, 4)}`
+            return (
+              <div
+                key={e.date}
+                className="bg-white rounded-xl shadow-md p-6 border border-gray-100 hover:shadow-lg transition"
+              >
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                  {formatted}
+                </h2>
+                <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
+                  <div className="flex items-center gap-2">
+                    <Scale className="w-4 h-4 text-emerald-600" />
+                    <span>Вес: {(e.weightGrams / 1000).toFixed(1)} кг</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Flame className="w-4 h-4 text-orange-500" />
+                    <span>Калории In: {e.caloriesIn}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Flame className="w-4 h-4 text-blue-500" />
+                    <span>Калории Out: {e.caloriesOut}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Footprints className="w-4 h-4 text-purple-500" />
+                    <span>Шаги: {e.steps}</span>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
-      )}
+      </div>
     </div>
   )
 }
