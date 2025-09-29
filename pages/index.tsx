@@ -18,7 +18,7 @@ export default function HomePage() {
         <title>Fitness Diary</title>
         <meta property="og:title" content="Fitness Diary" />
         <meta property="og:description" content="Onchain дневник: вес, калории и шаги" />
-        <meta property="og:image" content="https://fitness-diary-web.vercel.app/preview.png" />
+        <meta property="og:image" content="https://fitness-diary-web.vercel.app/preview2.png" />
       </Head>
 
       <main className="flex items-center justify-center h-screen">
