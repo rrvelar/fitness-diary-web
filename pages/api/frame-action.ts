@@ -1,12 +1,6 @@
-// pages/api/frame-action.tsx
+// pages/api/frame-action.ts
 import React from "react"
 import { createFrames, Button } from "frames.js/next"
-import { writeContract } from "@wagmi/core"
-import abi from "../../abi/FitnessDiary.json"
-import { wagmiServerConfig } from "../../lib/wagmi"
-
-
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`
 
 const frames = createFrames({
   basePath: "/api/frame-action",
@@ -16,7 +10,6 @@ export default frames(async (ctx) => {
   const action = ctx.searchParams?.action ?? ""
 
   if (action === "entries") {
-    // 🔹 тут можно подгружать реальные записи, сейчас — заглушка
     return {
       image: (
         <div style={{ fontSize: 28, color: "black", padding: 40 }}>
@@ -52,54 +45,14 @@ export default frames(async (ctx) => {
   }
 
   if (action === "save") {
-    try {
-      const input = ctx.message?.inputText || "" // строка от пользователя
-      const parts = input.split(",").map((p: string) => p.trim()) // <-- ✅ фикс
+    const input = ctx.message?.inputText || ""
+    const parts = input.split(",").map((p: string) => p.trim())
 
-      if (parts.length < 5) {
-        throw new Error("Недостаточно данных")
-      }
-
-      const [dateStr, weightStr, calInStr, calOutStr, stepsStr] = parts
-
-      const ymd = Number(dateStr)
-      const weight = Math.round(Number(weightStr) * 1000) // кг → граммы
-      const caloriesIn = Number(calInStr)
-      const caloriesOut = Number(calOutStr)
-      const steps = Number(stepsStr)
-
-      // Запись в контракт
-      await writeContract(wagmiServerConfig, {
-        abi,
-        address: CONTRACT_ADDRESS,
-        functionName: "logEntry",
-        args: [ymd, weight, caloriesIn, caloriesOut, steps],
-      })
-
-      return {
-        image: (
-          <div style={{ fontSize: 28, color: "green", padding: 40 }}>
-            ✅ Запись сохранена!
-            <br />
-            Вес: {weightStr} кг
-            <br />
-            Калории: {calInStr}/{calOutStr}
-            <br />
-            Шаги: {stepsStr}
-          </div>
-        ),
-        buttons: [
-          <Button key="back2" action="post" target="/api/frame-action">
-            🔙 Назад
-          </Button>,
-        ],
-      }
-    } catch (err: any) {
-      console.error("Ошибка сохранения:", err)
+    if (parts.length < 5) {
       return {
         image: (
           <div style={{ fontSize: 28, color: "red", padding: 40 }}>
-            ❌ Ошибка: {err.message}
+            ❌ Недостаточно данных
           </div>
         ),
         buttons: [
@@ -109,9 +62,34 @@ export default frames(async (ctx) => {
         ],
       }
     }
+
+    const [dateStr, weightStr, calInStr, calOutStr, stepsStr] = parts
+
+    // ✅ Генерим ссылку на страницу frame.tsx с параметрами
+    const url = `https://fitness-diary-web.vercel.app/frame?date=${dateStr}&weight=${weightStr}&calIn=${calInStr}&calOut=${calOutStr}&steps=${stepsStr}`
+
+    return {
+      image: (
+        <div style={{ fontSize: 28, color: "green", padding: 40 }}>
+          ✅ Данные получены!
+          <br />
+          Вес: {weightStr} кг
+          <br />
+          Калории: {calInStr}/{calOutStr}
+          <br />
+          Шаги: {stepsStr}
+          <br />
+          Теперь подпишите транзакцию
+        </div>
+      ),
+      buttons: [
+        <Button key="sign" action="link" target={url}>
+          🔗 Подписать во встроенном кошельке
+        </Button>,
+      ],
+    }
   }
 
-  // fallback
   return {
     image: (
       <div style={{ fontSize: 28, color: "black", padding: 40 }}>
