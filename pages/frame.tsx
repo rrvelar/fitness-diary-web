@@ -2,57 +2,24 @@ import Head from "next/head"
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/router"
 import { encodeFunctionData } from "viem"
+import { sdk } from "@farcaster/miniapp-sdk"   // ✅ добавили импорт SDK
 import abi from "../abi/FitnessDiary.json"
-
-declare global {
-  interface Window {
-    farcaster?: {
-      actions?: { ready: () => void }
-      wallet?: {
-        getAccounts?: () => Promise<string[]>
-        sendTransaction?: (tx: {
-          to: `0x${string}`
-          data?: `0x${string}`
-          value?: `0x${string}`
-        }) => Promise<`0x${string}`>
-        signTypedData?: (typedData: unknown) => Promise<`0x${string}`>
-      }
-    }
-  }
-}
 
 export default function Frame() {
   const router = useRouter()
   const [status, setStatus] = useState<string>("")
   const sentRef = useRef(false)
 
-  // 1) Подключаем SDK и сразу дергаем ready()
+  // 1) Говорим Warpcast, что мини-апп готов
   useEffect(() => {
-    if (typeof window === "undefined") return
-
-    const callReady = () => {
+    ;(async () => {
       try {
-        window.farcaster?.actions?.ready?.()
-        console.log("✅ Farcaster SDK ready called")
+        await sdk.actions.ready()
+        console.log("✅ sdk.actions.ready() called")
       } catch (e) {
-        console.warn("⚠️ ready() not available yet", e)
+        console.warn("⚠️ sdk.actions.ready() failed", e)
       }
-    }
-
-    // вызвать ready() сразу (если SDK уже есть)
-    callReady()
-
-    // затем грузим SDK-скрипт, если его ещё нет
-    if (!window.farcaster) {
-      const s = document.createElement("script")
-      s.src = "https://warpcast.com/sdk/v2"
-      s.async = true
-      s.onload = () => {
-        console.log("📥 Farcaster SDK script loaded")
-        callReady()
-      }
-      document.body.appendChild(s)
-    }
+    })()
   }, [])
 
   // 2) Если пришли query-параметры — шлём транзакцию
@@ -70,7 +37,8 @@ export default function Frame() {
 
     if (!haveAll) return
 
-    const wallet = window.farcaster?.wallet
+    // ⚠️ В новом SDK кошелёк берём так:
+    const wallet = sdk.wallet
     if (!wallet?.sendTransaction) {
       setStatus("⚠️ Встроенный кошелёк Warpcast недоступен")
       return
@@ -93,7 +61,7 @@ export default function Frame() {
           args: [ymd, w, ci, co, st],
         })
 
-        const txHash = await wallet.sendTransaction!({
+        const txHash = await wallet.sendTransaction({
           to: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
           data,
           value: "0x0",
@@ -109,23 +77,21 @@ export default function Frame() {
 
   return (
     <>
-     <Head>
-  <title>Fitness Diary Frame</title>
+      <Head>
+        <title>Fitness Diary Frame</title>
 
-  {/* OpenGraph */}
-  <meta property="og:url" content="https://fitness-diary-web.vercel.app/frame" />
-  <meta property="og:title" content="Fitness Diary Health Onchain" />
-  <meta property="og:description" content="Log your weight, calories, and steps directly in Warpcast and see your progress on Base." />
-  <meta property="og:image" content="https://fitness-diary-web.vercel.app/og.png" />
-  
+        {/* OpenGraph */}
+        <meta property="og:url" content="https://fitness-diary-web.vercel.app/frame" />
+        <meta property="og:title" content="Fitness Diary Health Onchain" />
+        <meta property="og:description" content="Log your weight, calories, and steps directly in Warpcast and see your progress on Base." />
+        <meta property="og:image" content="https://fitness-diary-web.vercel.app/og.png" />
 
-  {/* JSON vNext — одной строкой */}
-  <meta
-    name="fc:frame"
-    content='{"version":"next","imageUrl":"https://fitness-diary-web.vercel.app/preview2.png","buttons":[{"title":"📖 Мои записи","action":{"type":"post","target":"https://fitness-diary-web.vercel.app/api/frame-action?action=entries"}},{"title":"➕ Добавить","action":{"type":"post","target":"https://fitness-diary-web.vercel.app/api/frame-action?action=log"}}]}'
-  />
-</Head>
-
+        {/* JSON vNext */}
+        <meta
+          name="fc:frame"
+          content='{"version":"next","imageUrl":"https://fitness-diary-web.vercel.app/preview2.png","buttons":[{"title":"📖 Мои записи","action":{"type":"post","target":"https://fitness-diary-web.vercel.app/api/frame-action?action=entries"}},{"title":"➕ Добавить","action":{"type":"post","target":"https://fitness-diary-web.vercel.app/api/frame-action?action=log"}}]}'
+        />
+      </Head>
 
       <main style={{ padding: 16 }}>
         <h1>Fitness Diary — Mini</h1>
