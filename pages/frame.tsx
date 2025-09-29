@@ -2,7 +2,7 @@ import Head from "next/head"
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/router"
 import { encodeFunctionData } from "viem"
-import { sdk } from "@farcaster/miniapp-sdk"   // ✅ новый SDK
+import { sdk } from "@farcaster/miniapp-sdk"
 import abi from "../abi/FitnessDiary.json"
 
 export default function Frame() {
@@ -10,7 +10,7 @@ export default function Frame() {
   const [status, setStatus] = useState<string>("")
   const sentRef = useRef(false)
 
-  // 1) Miniapp ready
+  // 1) Сообщаем Warpcast, что мини-апп готов
   useEffect(() => {
     ;(async () => {
       try {
@@ -22,18 +22,18 @@ export default function Frame() {
     })()
   }, [])
 
-  // 2) Если пришли query-параметры — шлём транзакцию
+  // 2) Если есть query-параметры → шлём транзакцию
   useEffect(() => {
     if (!router.isReady) return
     if (sentRef.current) return
 
     const { date, weight, calIn, calOut, steps } = router.query
     const haveAll =
-      typeof date !== "undefined" &&
-      typeof weight !== "undefined" &&
-      typeof calIn !== "undefined" &&
-      typeof calOut !== "undefined" &&
-      typeof steps !== "undefined"
+      date !== undefined &&
+      weight !== undefined &&
+      calIn !== undefined &&
+      calOut !== undefined &&
+      steps !== undefined
 
     if (!haveAll) return
 
@@ -60,7 +60,6 @@ export default function Frame() {
           args: [ymd, w, ci, co, st],
         })
 
-        // 🚀 Отправка через EIP-1193 request
         const [from] = await provider.request({ method: "eth_accounts" })
         const txHash = await provider.request({
           method: "eth_sendTransaction",
@@ -90,10 +89,13 @@ export default function Frame() {
         {/* OG */}
         <meta property="og:url" content="https://fitness-diary-web.vercel.app/frame" />
         <meta property="og:title" content="Fitness Diary Health Onchain" />
-        <meta property="og:description" content="Log your weight, calories, and steps directly in Warpcast and see your progress on Base." />
+        <meta
+          property="og:description"
+          content="Log your weight, calories, and steps directly in Warpcast and see your progress on Base."
+        />
         <meta property="og:image" content="https://fitness-diary-web.vercel.app/og.png" />
 
-        {/* JSON vNext */}
+        {/* ✅ Единственный корректный fc:frame */}
         <meta
           name="fc:frame"
           content='{"version":"next","imageUrl":"https://fitness-diary-web.vercel.app/preview2.png","buttons":[{"title":"📖 Мои записи","action":{"type":"post","target":"https://fitness-diary-web.vercel.app/api/frame-action?action=entries"}},{"title":"➕ Добавить","action":{"type":"post","target":"https://fitness-diary-web.vercel.app/api/frame-action?action=log"}}]}'
