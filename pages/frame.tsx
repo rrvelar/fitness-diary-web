@@ -2,7 +2,7 @@ import Head from "next/head"
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/router"
 import { encodeFunctionData } from "viem"
-import { sdk } from "@farcaster/miniapp-sdk"   // ✅ добавили импорт SDK
+import { sdk } from "@farcaster/miniapp-sdk"   // ✅ новый SDK
 import abi from "../abi/FitnessDiary.json"
 
 export default function Frame() {
@@ -10,7 +10,7 @@ export default function Frame() {
   const [status, setStatus] = useState<string>("")
   const sentRef = useRef(false)
 
-  // 1) Говорим Warpcast, что мини-апп готов
+  // 1) Miniapp ready
   useEffect(() => {
     ;(async () => {
       try {
@@ -37,7 +37,6 @@ export default function Frame() {
 
     if (!haveAll) return
 
-    // ⚠️ В новом SDK кошелёк берём так:
     const wallet = sdk.wallet
     if (!wallet?.sendTransaction) {
       setStatus("⚠️ Встроенный кошелёк Warpcast недоступен")
@@ -80,7 +79,7 @@ export default function Frame() {
       <Head>
         <title>Fitness Diary Frame</title>
 
-        {/* OpenGraph */}
+        {/* OG */}
         <meta property="og:url" content="https://fitness-diary-web.vercel.app/frame" />
         <meta property="og:title" content="Fitness Diary Health Onchain" />
         <meta property="og:description" content="Log your weight, calories, and steps directly in Warpcast and see your progress on Base." />
