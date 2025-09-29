@@ -12,17 +12,23 @@ import { useEffect } from "react"
 function WarpcastReady() {
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const script = document.createElement("script")
-      script.src = "https://www.unpkg.com/@farcaster/mini/dist/sdk.min.js"
-      script.async = true
-      script.onload = () => {
-        // @ts-ignore
-        if (window.farcaster) {
+      // если SDK ещё не загружен — подгружаем
+      if (!window.farcaster) {
+        const script = document.createElement("script")
+        script.src = "https://www.unpkg.com/@farcaster/mini/dist/sdk.min.js"
+        script.async = true
+        script.onload = () => {
           // @ts-ignore
-          window.farcaster.actions.ready()
+          if (window.farcaster) {
+            // @ts-ignore
+            window.farcaster.actions.ready()
+          }
         }
+        document.body.appendChild(script)
+      } else {
+        // @ts-ignore
+        window.farcaster.actions.ready()
       }
-      document.body.appendChild(script)
     }
   }, [])
 
