@@ -6,13 +6,9 @@ import { config } from "../lib/wagmi"   // <-- правильный импорт
 import "../styles/globals.css"
 import type { AppProps } from "next/app"
 
-export default function App({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />
-}
-
 const qc = new QueryClient()
 
-export default function App({ Component, pageProps }: any) {
+export default function MyApp({ Component, pageProps }: AppProps) {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={qc}>
