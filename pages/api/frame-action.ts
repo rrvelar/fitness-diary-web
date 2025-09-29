@@ -18,9 +18,7 @@ export default frames((ctx) => {
       ),
       buttons: [{ label: "🔙 Назад", action: "post", target: "/api/frame" }],
     }
-  }
-
-  if (action === "log") {
+  } else if (action === "log") {
     return {
       image: (
         <div style={{ fontSize: 28, color: "blue", padding: 40 }}>
@@ -30,9 +28,7 @@ export default frames((ctx) => {
       textInput: "Например: 79.3, 2500, 3000, 12000",
       buttons: [{ label: "✅ Сохранить", action: "post", target: "/api/frame?action=save" }],
     }
-  }
-
-  if (action === "save") {
+  } else if (action === "save") {
     return {
       image: (
         <div style={{ fontSize: 28, color: "green", padding: 40 }}>
@@ -43,7 +39,7 @@ export default frames((ctx) => {
     }
   }
 
-  // fallback
+  // fallback — обязательно вернуть объект
   return {
     image: (
       <div style={{ fontSize: 28, color: "black", padding: 40 }}>
