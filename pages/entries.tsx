@@ -9,6 +9,7 @@ import { Skeleton } from "../components/ui/skeleton"
 import abi from "../abi/FitnessDiary.json"
 import contractAddress from "../abi/FitnessDiary.address.json"
 import { useAccount } from "wagmi"
+import { ArrowUpCircle, ArrowDownCircle, Flame, Footprints } from "lucide-react"
 
 type Entry = {
   date: number
@@ -37,7 +38,6 @@ export default function EntriesPage() {
       let dates: bigint[] = []
       let count = 10
 
-      // пробуем count = 10, если не сработает — уменьшаем
       while (count > 0 && dates.length === 0) {
         try {
           dates = (await readContract(config, {
@@ -78,7 +78,9 @@ export default function EntriesPage() {
         })
       }
 
-      setEntries((prev) => [...prev, ...newEntries])
+      setEntries((prev) =>
+        [...prev, ...newEntries].sort((a, b) => b.date - a.date)
+      )
       setStartIndex((prev) => prev + dates.length)
     } catch (err: any) {
       console.error("Ошибка при загрузке:", err)
@@ -90,7 +92,6 @@ export default function EntriesPage() {
 
   useEffect(() => {
     if (address) {
-      // сбрасываем состояние при смене пользователя
       setEntries([])
       setStartIndex(0)
       setHasMore(true)
@@ -105,33 +106,64 @@ export default function EntriesPage() {
   }
 
   return (
-    <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-bold">Мои записи</h1>
+    <div className="p-6 space-y-6 max-w-2xl mx-auto">
+      <h1 className="text-3xl font-extrabold text-center text-emerald-600">
+        📘 Мой дневник здоровья
+      </h1>
 
       {error && <p className="text-red-500">{error}</p>}
 
       {entries.length === 0 && !loading && (
-        <p className="text-gray-500">У вас пока нет записей.</p>
+        <p className="text-gray-500 text-center">У вас пока нет записей.</p>
       )}
 
-      <div className="grid gap-4">
-        {entries.map((entry, i) => (
-          <Card key={`${entry.date}-${i}`}>
-            <CardHeader>
-              <CardTitle>{formatDate(entry.date)}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1 text-sm">
-              <p>Вес: {entry.weight.toFixed(1)} кг</p>
-              <p>Калории (вход): {entry.caloriesIn}</p>
-              <p>Калории (расход): {entry.caloriesOut}</p>
-              <p>Шаги: {entry.steps}</p>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid gap-6">
+        {entries.map((entry, i) => {
+          const prev = entries[i + 1]
+          const weightDiff = prev ? entry.weight - prev.weight : 0
+
+          return (
+            <Card
+              key={`${entry.date}-${i}`}
+              className="rounded-2xl shadow-lg border border-gray-100 bg-white"
+            >
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold text-emerald-700">
+                  {formatDate(entry.date)}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-gray-700">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Вес:</span>
+                  <span className="text-lg font-bold">{entry.weight.toFixed(1)} кг</span>
+                  {weightDiff !== 0 && (
+                    weightDiff > 0 ? (
+                      <ArrowUpCircle className="text-red-500 w-5 h-5" title={`+${weightDiff.toFixed(1)} кг`} />
+                    ) : (
+                      <ArrowDownCircle className="text-green-500 w-5 h-5" title={`${weightDiff.toFixed(1)} кг`} />
+                    )
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Flame className="text-orange-500 w-5 h-5" />
+                  <span>Калории (вход): <b>{entry.caloriesIn}</b></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Flame className="text-blue-500 w-5 h-5" />
+                  <span>Калории (расход): <b>{entry.caloriesOut}</b></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Footprints className="text-emerald-500 w-5 h-5" />
+                  <span>Шаги: <b>{entry.steps}</b></span>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
 
         {loading &&
           Array.from({ length: 1 }).map((_, i) => (
-            <Card key={`skeleton-${i}`}>
+            <Card key={`skeleton-${i}`} className="rounded-2xl shadow-md border">
               <CardHeader>
                 <Skeleton className="h-5 w-32" />
               </CardHeader>
@@ -144,9 +176,20 @@ export default function EntriesPage() {
           ))}
       </div>
 
-      {!loading && hasMore && (
-        <Button onClick={loadEntries}>Показать ещё</Button>
-      )}
+      <div className="text-center">
+        {!loading && hasMore && (
+          <Button
+            onClick={loadEntries}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6 py-2 shadow-md"
+          >
+            {loading ? "Загрузка..." : "Показать ещё"}
+          </Button>
+        )}
+
+        {!hasMore && (
+          <p className="text-gray-500 mt-4">Все записи загружены ✅</p>
+        )}
+      </div>
     </div>
   )
 }
