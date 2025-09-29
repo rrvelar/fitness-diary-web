@@ -1,103 +1,134 @@
 import { useEffect, useState } from "react"
+import { readContract } from "@wagmi/core"
 import { useAccount } from "wagmi"
-import { readContract } from "wagmi/actions"
 import { config } from "../lib/wagmi"
 import abi from "../abi/FitnessDiary.json"
-import contractAddressJson from "../abi/FitnessDiary.address.json" assert { type: "json" }
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts"
+import contractAddress from "../abi/FitnessDiary.address.json"
+import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from "recharts"
 
-const CONTRACT_ADDRESS = contractAddressJson.address as `0x${string}`
+const CONTRACT_ADDRESS = contractAddress.address as unknown as `0x${string}`
 
-type Point = {
-  date: string
-  weight: number
-  in: number
-  out: number
+type Entry = {
+  date: number
+  weightGrams: number
+  caloriesIn: number
+  caloriesOut: number
   steps: number
+  exists: boolean
 }
 
 export default function StatsPage() {
-  const { address, isConnected } = useAccount()
-  const [data, setData] = useState<Point[]>([])
-  const [loading, setLoading] = useState(false)
+  const { address } = useAccount()
+  const [entries, setEntries] = useState<Entry[]>([])
 
   useEffect(() => {
-    if (!isConnected || !address) return
+    if (!address) return
+    fetchEntries()
+  }, [address])
 
-    async function loadStats() {
+  async function safeGetDates(addr: `0x${string}`) {
+    let count = 20n
+    while (count > 0n) {
       try {
-        setLoading(true)
-
-        // 1. Получаем даты (например, первые 30)
-        const dates = (await readContract(config, {
-          address: CONTRACT_ADDRESS,
+        return await readContract(config, {
           abi,
+          address: CONTRACT_ADDRESS,
           functionName: "getDates",
-          args: [address, BigInt(0), BigInt(30)],
-        })) as bigint[]
-
-        // 2. Получаем по каждой дате полную запись
-        const points: Point[] = []
-        for (const d of dates) {
-          const entry: any = await readContract(config, {
-            address: CONTRACT_ADDRESS,
-            abi,
-            functionName: "getEntry",
-            args: [address, Number(d)],
-          })
-          if (entry.exists) {
-            points.push({
-              date: new Date(Number(entry.date) * 1000)
-                .toISOString()
-                .split("T")[0],
-              weight: Number(entry.weightGrams) / 1000,
-              in: Number(entry.caloriesIn),
-              out: Number(entry.caloriesOut),
-              steps: Number(entry.steps),
-            })
-          }
-        }
-
-        setData(points.reverse()) // последние даты внизу → наверх
-      } catch (err) {
-        console.error("Ошибка при загрузке статистики:", err)
-      } finally {
-        setLoading(false)
+          args: [addr, 0n, count],
+        }) as bigint[]
+      } catch (err: any) {
+        if (err.message.includes("Out of bounds")) count -= 1n
+        else throw err
       }
     }
+    return []
+  }
 
-    loadStats()
-  }, [isConnected, address])
+  async function fetchEntries() {
+    const datesBigInt = await safeGetDates(address as `0x${string}`)
+    const dates = datesBigInt.map(d => Number(d))
+    const fetched: Entry[] = []
+    for (let d of dates) {
+      const entry = await readContract(config, {
+        abi,
+        address: CONTRACT_ADDRESS,
+        functionName: "getEntry",
+        args: [address, BigInt(d)],
+      }) as unknown as Entry
+      if (entry.exists) {
+        fetched.push({
+          ...entry,
+          date: Number(entry.date),
+          weightGrams: Number(entry.weightGrams),
+          caloriesIn: Number(entry.caloriesIn),
+          caloriesOut: Number(entry.caloriesOut),
+          steps: Number(entry.steps),
+        })
+      }
+    }
+    setEntries(fetched.reverse())
+  }
+
+  function formatDate(num: number) {
+    const str = num.toString()
+    return `${str.slice(6,8)}/${str.slice(4,6)}`
+  }
+
+  const data = entries.map(e => ({
+    date: formatDate(e.date),
+    weight: e.weightGrams/1000,
+    in: e.caloriesIn,
+    out: e.caloriesOut,
+    steps: e.steps,
+  }))
 
   return (
-    <div style={{ width: "100%", height: 400 }}>
-      <h1>📊 Статистика</h1>
-      {loading && <p>Загрузка...</p>}
-      {!loading && data.length === 0 && <p>Нет данных</p>}
-      {data.length > 0 && (
-        <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Line type="monotone" dataKey="weight" stroke="#8884d8" />
-            <Line type="monotone" dataKey="in" stroke="#82ca9d" />
-            <Line type="monotone" dataKey="out" stroke="#ff7300" />
-            <Line type="monotone" dataKey="steps" stroke="#387908" />
-          </LineChart>
-        </ResponsiveContainer>
-      )}
+    <div className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold text-emerald-700">Статистика</h1>
+
+      <Card>
+        <CardHeader><CardTitle>Вес</CardTitle></CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={data}>
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Line dataKey="weight" stroke="#10b981" />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Калории</CardTitle></CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={data}>
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Line dataKey="in" stroke="#f97316" />
+              <Line dataKey="out" stroke="#3b82f6" />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Шаги</CardTitle></CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={data}>
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Line dataKey="steps" stroke="#9333ea" />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
     </div>
   )
 }
