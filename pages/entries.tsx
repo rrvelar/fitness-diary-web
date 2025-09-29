@@ -20,14 +20,13 @@ type Entry = {
 
 const CONTRACT_ADDRESS = ((contractAddress as any).address || contractAddress) as `0x${string}`
 
-// 🚧 пока жёстко: список дат для теста
-const HARDCODED_DATES = [BigInt(20250911)]
-
 export default function EntriesPage() {
   const { address } = useAccount()
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [startIndex, setStartIndex] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
 
   const loadEntries = async () => {
     if (!address) return
@@ -35,8 +34,32 @@ export default function EntriesPage() {
     setError(null)
 
     try {
+      let dates: bigint[] = []
+      let count = 10
+
+      // пробуем count = 10, если не сработает — уменьшаем
+      while (count > 0 && dates.length === 0) {
+        try {
+          dates = (await readContract(config, {
+            address: CONTRACT_ADDRESS,
+            abi: abi,
+            functionName: "getDates",
+            args: [address, BigInt(startIndex), BigInt(count)]
+          })) as bigint[]
+        } catch (err: any) {
+          console.warn(`getDates failed (count=${count}):`, err.shortMessage || err.message)
+          count = Math.floor(count / 2)
+        }
+      }
+
+      if (dates.length === 0) {
+        setHasMore(false)
+        return
+      }
+
       const newEntries: Entry[] = []
-      for (const d of HARDCODED_DATES) {
+
+      for (const d of dates) {
         const entry = (await readContract(config, {
           address: CONTRACT_ADDRESS,
           abi: abi,
@@ -44,12 +67,7 @@ export default function EntriesPage() {
           args: [address, d]
         })) as any
 
-        console.log("RAW ENTRY from contract:", entry)
-
-        // если пустая запись — пропускаем
-        if (!entry.exists) {
-          continue
-        }
+        if (!entry.exists) continue
 
         newEntries.push({
           date: Number(entry.date),
@@ -60,7 +78,8 @@ export default function EntriesPage() {
         })
       }
 
-      setEntries(newEntries)
+      setEntries((prev) => [...prev, ...newEntries])
+      setStartIndex((prev) => prev + dates.length)
     } catch (err: any) {
       console.error("Ошибка при загрузке:", err)
       setError("Ошибка при загрузке данных")
@@ -70,7 +89,13 @@ export default function EntriesPage() {
   }
 
   useEffect(() => {
-    loadEntries()
+    if (address) {
+      // сбрасываем состояние при смене пользователя
+      setEntries([])
+      setStartIndex(0)
+      setHasMore(true)
+      loadEntries()
+    }
   }, [address])
 
   const formatDate = (yyyymmdd: number) => {
@@ -119,8 +144,8 @@ export default function EntriesPage() {
           ))}
       </div>
 
-      {!loading && entries.length > 0 && (
-        <Button onClick={loadEntries}>Обновить</Button>
+      {!loading && hasMore && (
+        <Button onClick={loadEntries}>Показать ещё</Button>
       )}
     </div>
   )
