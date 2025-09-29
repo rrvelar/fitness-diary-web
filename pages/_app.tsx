@@ -12,7 +12,13 @@ const qc = new QueryClient()
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <WagmiProvider config={wagmiClientConfig}>
-    <RainbowKitProvider>{children}</RainbowKitProvider>
+      <QueryClientProvider client={queryClient}>
+        <RainbowKitProvider>
+          <Layout>
+            <Component {...pageProps} />
+          </Layout>
+        </RainbowKitProvider>
+      </QueryClientProvider>
     </WagmiProvider>
   )
 }
