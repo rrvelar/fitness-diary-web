@@ -1,16 +1,35 @@
-// lib/wagmi.ts
 import { createConfig, http } from "wagmi"
 import { base } from "wagmi/chains"
+
+// 🌈 RainbowKit
+import {
+  connectorsForWallets,
+  injectedWallet,
+  metaMaskWallet,
+  coinbaseWallet,
+  walletConnectWallet,
+} from "@rainbow-me/rainbowkit"
 
 // =========================
 // 1. Конфиг для клиента (RainbowKit)
 // =========================
-import { getDefaultWallets } from "@rainbow-me/rainbowkit"
-
-const { connectors } = getDefaultWallets({
-  appName: "Fitness Diary",
-  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "",
-})
+const connectors = connectorsForWallets(
+  [
+    {
+      groupName: "Recommended",
+      wallets: [
+        injectedWallet,
+        metaMaskWallet,
+        coinbaseWallet,
+        walletConnectWallet,
+      ],
+    },
+  ],
+  {
+    appName: "Fitness Diary",
+    projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "",
+  }
+)
 
 export const wagmiClientConfig = createConfig({
   chains: [base],
