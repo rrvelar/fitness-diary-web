@@ -109,43 +109,23 @@ export default function Frame() {
 
   return (
     <>
-      <Head>
-        <title>Fitness Diary Frame</title>
-        <meta property="og:title" content="Fitness Diary Frame" />
-        <meta
-          property="og:description"
-          content="Добавь запись прямо из Warpcast"
-        />
-        <meta
-          property="og:image"
-          content="https://fitness-diary-web.vercel.app/preview.png"
-        />
+     <Head>
+  <title>Fitness Diary Frame</title>
 
-        {/* JSON vNext */}
-        <meta
-          name="fc:frame"
-          content='{
-            "version": "next",
-            "imageUrl": "https://fitness-diary-web.vercel.app/preview.png",
-            "buttons": [
-              {
-                "title": "📖 Мои записи",
-                "action": {
-                  "type": "post",
-                  "target": "https://fitness-diary-web.vercel.app/api/frame-action?action=entries"
-                }
-              },
-              {
-                "title": "➕ Добавить",
-                "action": {
-                  "type": "post",
-                  "target": "https://fitness-diary-web.vercel.app/api/frame-action?action=log"
-                }
-              }
-            ]
-          }'
-        />
-      </Head>
+  {/* OpenGraph */}
+  <meta property="og:url" content="https://fitness-diary-web.vercel.app/frame" />
+  <meta property="og:title" content="Fitness Diary Health Onchain" />
+  <meta property="og:description" content="Log your weight, calories, and steps directly in Warpcast and see your progress on Base." />
+  <meta property="og:image" content="https://fitness-diary-web.vercel.app/og.png" />
+  
+
+  {/* JSON vNext — одной строкой */}
+  <meta
+    name="fc:frame"
+    content='{"version":"next","imageUrl":"https://fitness-diary-web.vercel.app/preview2.png","buttons":[{"title":"📖 Мои записи","action":{"type":"post","target":"https://fitness-diary-web.vercel.app/api/frame-action?action=entries"}},{"title":"➕ Добавить","action":{"type":"post","target":"https://fitness-diary-web.vercel.app/api/frame-action?action=log"}}]}'
+  />
+</Head>
+
 
       <main style={{ padding: 16 }}>
         <h1>Fitness Diary — Mini</h1>
