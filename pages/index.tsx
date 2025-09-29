@@ -6,7 +6,6 @@ export default function HomePage() {
   const router = useRouter()
 
   useEffect(() => {
-    // 🚫 Мини-аппу не нужен WalletConnect, сразу редиректим
     if (window?.farcaster) {
       router.replace("/frame")
     }
@@ -19,6 +18,12 @@ export default function HomePage() {
         <meta property="og:title" content="Fitness Diary" />
         <meta property="og:description" content="Onchain дневник: вес, калории и шаги" />
         <meta property="og:image" content="https://fitness-diary-web.vercel.app/preview2.png" />
+
+        {/* 🔑 Минимальная мета для Embed Tool */}
+        <meta
+          name="fc:frame"
+          content='{"version":"next","imageUrl":"https://fitness-diary-web.vercel.app/preview2.png"}'
+        />
       </Head>
 
       <main className="flex items-center justify-center h-screen">
