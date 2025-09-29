@@ -4,7 +4,6 @@ import abi from "../abi/FitnessDiary.json"
 import contractAddress from "../abi/FitnessDiary.address.json"
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
 import { Button } from "../components/ui/button"
-import { Input } from "../components/ui/input"
 import { config } from "../lib/wagmi"
 
 const CONTRACT_ADDRESS = contractAddress.address as unknown as `0x${string}`
@@ -67,48 +66,53 @@ export default function LogPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm text-gray-600 mb-1">Дата</label>
-              <Input
+              <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
+                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
             <div>
               <label className="block text-sm text-gray-600 mb-1">Вес (кг)</label>
-              <Input
+              <input
                 type="number"
                 step="0.1"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
                 required
+                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
             <div>
               <label className="block text-sm text-gray-600 mb-1">Калории (вход)</label>
-              <Input
+              <input
                 type="number"
                 value={caloriesIn}
                 onChange={(e) => setCaloriesIn(e.target.value)}
                 required
+                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
             <div>
               <label className="block text-sm text-gray-600 mb-1">Калории (расход)</label>
-              <Input
+              <input
                 type="number"
                 value={caloriesOut}
                 onChange={(e) => setCaloriesOut(e.target.value)}
                 required
+                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
             <div>
               <label className="block text-sm text-gray-600 mb-1">Шаги</label>
-              <Input
+              <input
                 type="number"
                 value={steps}
                 onChange={(e) => setSteps(e.target.value)}
                 required
+                className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
 
