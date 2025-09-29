@@ -56,12 +56,13 @@ export default function EntriesPage() {
         }
 
         newEntries.push({
-          date: Number(d),
-          weight: Number(entry[0]) / 1000, // граммы → кг
-          caloriesIn: Number(entry[1]),
-          caloriesOut: Number(entry[2]),
-          steps: Number(entry[3])
+            date: Number(entry[0]),
+            weight: Number(entry[1]) / 1000, // граммы → кг
+            caloriesIn: Number(entry[2]),
+            caloriesOut: Number(entry[3]),
+            steps: Number(entry[4])
         })
+
       }
 
       setEntries(newEntries)
