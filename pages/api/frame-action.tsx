@@ -3,7 +3,8 @@ import React from "react"
 import { createFrames, Button } from "frames.js/next"
 import { writeContract } from "@wagmi/core"
 import abi from "../../abi/FitnessDiary.json"
-import { config } from "../../lib/wagmi"
+import { wagmiServerConfig } from "../../lib/wagmi"
+
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`
 
