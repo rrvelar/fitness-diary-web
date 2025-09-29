@@ -7,51 +7,39 @@ import "../styles/globals.css"
 import type { AppProps } from "next/app"
 import Layout from "../components/Layout"
 import { useEffect } from "react"
-import { actions } from "@farcaster/mini"
 
 // === 1. Frame component ===
-function FrameComponent() {
+function WarpcastReady() {
   useEffect(() => {
-    const script = document.createElement("script")
-    script.src = "https://www.unpkg.com/@farcaster/mini/dist/sdk.min.js"
-    script.async = true
-    script.onload = () => {
-      // @ts-ignore
-      if (window.farcaster) {
+    if (typeof window !== "undefined") {
+      const script = document.createElement("script")
+      script.src = "https://www.unpkg.com/@farcaster/mini/dist/sdk.min.js"
+      script.async = true
+      script.onload = () => {
         // @ts-ignore
-        window.farcaster.actions.ready()
+        if (window.farcaster) {
+          // @ts-ignore
+          window.farcaster.actions.ready()
+        }
       }
+      document.body.appendChild(script)
     }
-    document.body.appendChild(script)
   }, [])
 
-  return (
-    <main>
-      <h1>Fitness Diary Frame</h1>
-      <p>Эта страница нужна только для Warpcast (frames).</p>
-    </main>
-  )
+  return null
 }
 
-// === 2. Wrapper for actions.ready ===
-function WarpcastReady({ Component, pageProps }: AppProps) {
-  useEffect(() => {
-    actions.ready()
-  }, [])
-
-  return <Component {...pageProps} />
-}
-
-// === 3. Main App (единственный export default) ===
 const queryClient = new QueryClient()
 
+// === 2. Main App ===
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <WagmiProvider config={wagmiClientConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
           <Layout>
-            <WarpcastReady Component={Component} pageProps={pageProps} />
+            <WarpcastReady />
+            <Component {...pageProps} />
           </Layout>
         </RainbowKitProvider>
       </QueryClientProvider>
