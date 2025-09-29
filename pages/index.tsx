@@ -8,6 +8,7 @@ import contractAddress from "../abi/FitnessDiary.address.json"
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
+import { ConnectButton } from "@rainbow-me/rainbowkit"   // 🔹 добавили
 
 const CONTRACT_ADDRESS = contractAddress.address as unknown as `0x${string}`
 
@@ -82,6 +83,11 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col items-center p-6 space-y-6">
+      {/* 🔹 Кнопка подключения кошелька */}
+      <div className="self-end">
+        <ConnectButton showBalance={false} chainStatus="icon" />
+      </div>
+
       <h1 className="text-3xl font-bold text-blue-600">Мой дневник фитнеса</h1>
 
       <Link href="/log">
