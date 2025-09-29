@@ -22,7 +22,7 @@ const handler = async (ctx: any) => {
         <Button key="back" action="post" target="/api/frame-action">
           🔙 Назад
         </Button>,
-      ],
+      ] as [React.ReactElement],
     }
   }
 
@@ -40,7 +40,7 @@ const handler = async (ctx: any) => {
         <Button key="save" action="post" target="/api/frame-action?action=save">
           ✅ Сохранить
         </Button>,
-      ],
+      ] as [React.ReactElement],
     }
   }
 
@@ -59,7 +59,7 @@ const handler = async (ctx: any) => {
           <Button key="back3" action="post" target="/api/frame-action">
             🔙 Назад
           </Button>,
-        ],
+        ] as [React.ReactElement],
       }
     }
 
@@ -84,7 +84,7 @@ const handler = async (ctx: any) => {
         <Button key="sign" action="link" target={url}>
           🔗 Подписать во встроенном кошельке
         </Button>,
-      ],
+      ] as [React.ReactElement],
     }
   }
 
@@ -102,7 +102,7 @@ const handler = async (ctx: any) => {
       <Button key="log" action="post" target="/api/frame-action?action=log">
         ➕ Добавить
       </Button>,
-    ],
+    ] as [React.ReactElement, React.ReactElement],
   }
 }
 
