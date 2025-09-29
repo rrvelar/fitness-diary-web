@@ -8,17 +8,14 @@ import type { AppProps } from "next/app"
 import Layout from "../components/Layout"
 import { useEffect } from "react"
 import { actions } from "@farcaster/mini"
-import type { AppProps } from "next/app"
-import { useEffect } from "react"
 
-export default function Frame() {
+// === 1. Frame component ===
+function FrameComponent() {
   useEffect(() => {
-    // Загружаем SDK с CDN
     const script = document.createElement("script")
     script.src = "https://www.unpkg.com/@farcaster/mini/dist/sdk.min.js"
     script.async = true
     script.onload = () => {
-      // Когда SDK загрузился, вызываем ready()
       // @ts-ignore
       if (window.farcaster) {
         // @ts-ignore
@@ -36,8 +33,8 @@ export default function Frame() {
   )
 }
 
-
-export default function MyApp({ Component, pageProps }: AppProps) {
+// === 2. Wrapper for actions.ready ===
+function WarpcastReady({ Component, pageProps }: AppProps) {
   useEffect(() => {
     actions.ready()
   }, [])
@@ -45,8 +42,7 @@ export default function MyApp({ Component, pageProps }: AppProps) {
   return <Component {...pageProps} />
 }
 
-
-const qc = new QueryClient()
+// === 3. Main App (единственный export default) ===
 const queryClient = new QueryClient()
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -55,7 +51,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
           <Layout>
-            <Component {...pageProps} />
+            <WarpcastReady Component={Component} pageProps={pageProps} />
           </Layout>
         </RainbowKitProvider>
       </QueryClientProvider>
