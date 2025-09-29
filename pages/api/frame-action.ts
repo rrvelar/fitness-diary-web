@@ -6,7 +6,7 @@ const frames = createFrames({
   basePath: "/api/frame-action",
 })
 
-export default frames(async (ctx) => {
+const handler = async (ctx: any) => {
   const action = ctx.searchParams?.action ?? ""
 
   if (action === "entries") {
@@ -23,7 +23,7 @@ export default frames(async (ctx) => {
           🔙 Назад
         </Button>,
       ],
-    }
+    } as const
   }
 
   if (action === "log") {
@@ -41,7 +41,7 @@ export default frames(async (ctx) => {
           ✅ Сохранить
         </Button>,
       ],
-    }
+    } as const
   }
 
   if (action === "save") {
@@ -60,7 +60,7 @@ export default frames(async (ctx) => {
             🔙 Назад
           </Button>,
         ],
-      }
+      } as const
     }
 
     const [dateStr, weightStr, calInStr, calOutStr, stepsStr] = parts
@@ -85,10 +85,10 @@ export default frames(async (ctx) => {
           🔗 Подписать во встроенном кошельке
         </Button>,
       ],
-    }
+    } as const
   }
 
-  // fallback
+  // fallback — ОБЯЗАТЕЛЕН
   return {
     image: (
       <div style={{ fontSize: 28, color: "black", padding: 40 }}>
@@ -103,5 +103,7 @@ export default frames(async (ctx) => {
         ➕ Добавить
       </Button>,
     ],
-  }
-})
+  } as const
+}
+
+export default frames(handler)
