@@ -133,25 +133,36 @@ export default function EntriesPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-gray-700">
+                {/* Вес */}
                 <div className="flex items-center gap-2">
                   <span className="font-medium">Вес:</span>
                   <span className="text-lg font-bold">{entry.weight.toFixed(1)} кг</span>
                   {weightDiff !== 0 && (
                     weightDiff > 0 ? (
-                      <ArrowUpCircle className="text-red-500 w-5 h-5" title={`+${weightDiff.toFixed(1)} кг`} />
+                      <span title={`+${weightDiff.toFixed(1)} кг`}>
+                        <ArrowUpCircle className="text-red-500 w-5 h-5" />
+                      </span>
                     ) : (
-                      <ArrowDownCircle className="text-green-500 w-5 h-5" title={`${weightDiff.toFixed(1)} кг`} />
+                      <span title={`${weightDiff.toFixed(1)} кг`}>
+                        <ArrowDownCircle className="text-green-500 w-5 h-5" />
+                      </span>
                     )
                   )}
                 </div>
+
+                {/* Калории вход */}
                 <div className="flex items-center gap-2">
                   <Flame className="text-orange-500 w-5 h-5" />
                   <span>Калории (вход): <b>{entry.caloriesIn}</b></span>
                 </div>
+
+                {/* Калории расход */}
                 <div className="flex items-center gap-2">
                   <Flame className="text-blue-500 w-5 h-5" />
                   <span>Калории (расход): <b>{entry.caloriesOut}</b></span>
                 </div>
+
+                {/* Шаги */}
                 <div className="flex items-center gap-2">
                   <Footprints className="text-emerald-500 w-5 h-5" />
                   <span>Шаги: <b>{entry.steps}</b></span>
