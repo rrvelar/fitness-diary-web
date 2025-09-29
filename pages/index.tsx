@@ -131,14 +131,14 @@ export default function HomePage() {
         </CardHeader>
         <CardContent>
           {loading && <p>Загрузка...</p>}
-          {!loading && entries.length === 0 && <p className="text-gray-500">Записей пока нет</p>}
+          {!loading && entries.length === 0 && <p className="text-gray-600">Записей пока нет</p>}
           <div className="space-y-4">
             {entries.map((entry, i) => (
               <div key={i} className="border rounded-lg p-3 shadow-sm bg-white">
-                <p className="text-sm text-gray-600">{formatDate(entry.date)}</p>
-                <p className="font-medium">Вес: {(entry.weightGrams / 1000).toFixed(1)} кг</p>
-                <p className="text-sm">Калории: {entry.caloriesIn} / {entry.caloriesOut}</p>
-                <p className="text-sm">Шаги: {entry.steps}</p>
+                <p className="ext-sm text-gray-800 font-medium">{formatDate(entry.date)}</p>
+                <p className="font-semibold text-emerald-700">Вес: {(entry.weightGrams / 1000).toFixed(1)} кг</p>
+                <p className="text-sm text-gray-800">Калории: {entry.caloriesIn} / {entry.caloriesOut}</p>
+                <p className="text-sm text-gray-800">Шаги: {entry.steps}</p>
               </div>
             ))}
           </div>
