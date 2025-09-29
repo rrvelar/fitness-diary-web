@@ -19,7 +19,9 @@ type Entry = {
 }
 
 // ✅ универсальный фикс для контракта
-const CONTRACT_ADDRESS = contractAddress as unknown as `0x${string}`
+// стало
+const CONTRACT_ADDRESS = (contractAddress as any).address as `0x${string}`
+
 
 export default function EntriesPage() {
   const { address } = useAccount()
