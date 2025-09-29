@@ -3,14 +3,14 @@ import { useAccount, useWriteContract } from "wagmi"
 import abi from "../abi/FitnessDiary.json"
 import { Card, CardHeader, CardTitle, CardContent } from "../components/ui/card"
 import { Button } from "../components/ui/button"
-import { config } from "../lib/wagmi"
+import { wagmiClientConfig } from "../lib/wagmi"   // ✅ правильный импорт
 import { ConnectButton } from "@rainbow-me/rainbowkit"
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`
 
 export default function LogPage() {
   const { isConnected } = useAccount()
-  const { writeContractAsync } = useWriteContract({ config })
+  const { writeContractAsync } = useWriteContract({ config: wagmiClientConfig })  // ✅ поправлено
 
   // сегодняшняя дата сразу в формате YYYY-MM-DD
   const today = new Date().toISOString().split("T")[0]
