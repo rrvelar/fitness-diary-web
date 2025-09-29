@@ -1,15 +1,29 @@
 // pages/frame.tsx
-export default function FramePage() {
+export default function Frame() {
   return (
-    <div className="min-h-screen flex items-center justify-center text-center">
-      <div>
-        <h1 className="text-2xl font-bold text-emerald-600">Fitness Diary Frame</h1>
-        <p className="text-gray-600 mt-2">
-          Этот эндпоинт используется для Warpcast Mini App.<br />
-          Попробуй открыть его в Warpcast:  
-          <code className="block mt-2 text-emerald-700">/api/frame</code>
-        </p>
-      </div>
-    </div>
+    <>
+      <head>
+        <title>Fitness Diary Frame</title>
+        <meta property="og:title" content="Fitness Diary Frame" />
+        <meta property="og:description" content="Добавь запись прямо из Warpcast" />
+        <meta property="og:image" content="https://fitness-diary-web.vercel.app/preview.png" />
+
+        {/* 🔑 Основные мета-теги для Warpcast */}
+        <meta property="fc:frame" content="vNext" />
+        <meta property="fc:frame:image" content="https://fitness-diary-web.vercel.app/preview.png" />
+
+        <meta property="fc:frame:button:1" content="📖 Мои записи" />
+        <meta property="fc:frame:button:1:action" content="post" />
+        <meta property="fc:frame:button:1:target" content="https://fitness-diary-web.vercel.app/api/frame-action?action=entries" />
+
+        <meta property="fc:frame:button:2" content="➕ Добавить" />
+        <meta property="fc:frame:button:2:action" content="post" />
+        <meta property="fc:frame:button:2:target" content="https://fitness-diary-web.vercel.app/api/frame-action?action=log" />
+      </head>
+      <body>
+        <h1>Fitness Diary Frame</h1>
+        <p>Эта страница нужна только для Warpcast (frames).</p>
+      </body>
+    </>
   )
 }
