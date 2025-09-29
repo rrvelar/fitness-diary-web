@@ -10,7 +10,7 @@ type LayoutProps = {
 
 export default function Layout({ children }: LayoutProps) {
   const router = useRouter()
-  const isMiniApp = router.pathname.startsWith("/frame") // ✅ проверка
+  const isMiniApp = router.pathname.startsWith("/frame")
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
@@ -36,9 +36,12 @@ export default function Layout({ children }: LayoutProps) {
               Профиль
             </Link>
 
-            {/* 🚫 НЕ показываем кнопку WalletConnect в мини-дапе */}
+            {/* Wallet connect button только в веб-версии */}
             {!isMiniApp && (
-              <ConnectButton showBalance={false} accountStatus="address" />
+              <ConnectButton
+                showBalance={false}
+                accountStatus="address"
+              />
             )}
           </nav>
         </div>
