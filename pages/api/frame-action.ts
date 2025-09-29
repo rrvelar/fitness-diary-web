@@ -43,7 +43,7 @@ export default frames(async (ctx) => {
     }
   }
 
-  // fallback — главное меню
+  // 🔹 fallback всегда обязателен
   return {
     image: (
       <div style={{ fontSize: 28, color: "black", padding: 40 }}>
