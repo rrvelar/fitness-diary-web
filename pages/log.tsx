@@ -1,97 +1,119 @@
+import { useState } from "react"
+import { useWriteContract } from "wagmi"
+import abi from "../abi/FitnessDiary.json"
+import contractAddress from "../abi/FitnessDiary.address.json"
 
-import { useState } from "react";
-import { getDiaryContract } from "../hooks/useDiaryContract";
+export default function LogEntry() {
+  const { writeContractAsync } = useWriteContract()
 
-export default function LogPage() {
-  const [date, setDate] = useState<number>(20250101); // YYYYMMDD
-  const [weight, setWeight] = useState<number>(80000); // grams
-  const [calIn, setCalIn] = useState<number>(2500);
-  const [calOut, setCalOut] = useState<number>(3000);
-  const [steps, setSteps] = useState<number>(12000);
-  const [loading, setLoading] = useState<null | "log" | "update">(null);
+  const [date, setDate] = useState("")
+  const [weight, setWeight] = useState("")
+  const [caloriesIn, setCaloriesIn] = useState("")
+  const [caloriesOut, setCaloriesOut] = useState("")
+  const [steps, setSteps] = useState("")
 
-  const validate = () => {
-    if (!Number.isFinite(date)) throw new Error("Дата невалидна");
-    if (!Number.isFinite(weight)) throw new Error("Вес невалиден");
-    if (!Number.isFinite(calIn) || !Number.isFinite(calOut)) throw new Error("Калории невалидны");
-    if (!Number.isFinite(steps)) throw new Error("Шаги невалидны");
-  };
+  const handleLog = async () => {
+    await writeContractAsync({
+      abi,
+      address: contractAddress as `0x${string}`,
+      functionName: "logEntry",
+      args: [Number(date), Number(weight), Number(caloriesIn), Number(caloriesOut), Number(steps)],
+    })
+  }
 
-  const logEntry = async () => {
-    try {
-      validate();
-      setLoading("log");
-      const { contract } = await getDiaryContract();
-      const tx = await contract.logEntry(
-        Number(date),
-        Number(weight),
-        Number(calIn),
-        Number(calOut),
-        Number(steps)
-      );
-      await tx.wait();
-      alert("✅ Запись добавлена");
-    } catch (e: any) {
-      alert(`Ошибка: ${e?.message || e}`);
-    } finally {
-      setLoading(null);
-    }
-  };
-
-  const updateEntry = async () => {
-    try {
-      validate();
-      setLoading("update");
-      const { contract } = await getDiaryContract();
-      const tx = await contract.updateEntry(
-        Number(date),
-        Number(weight),
-        Number(calIn),
-        Number(calOut),
-        Number(steps)
-      );
-      await tx.wait();
-      alert("✅ Запись обновлена");
-    } catch (e: any) {
-      alert(`Ошибка: ${e?.message || e}`);
-    } finally {
-      setLoading(null);
-    }
-  };
-
-  const field = (label: string, value: number, setter: (v: number)=>void) => (
-    <label style={{display:"block", margin:"8px 0"}}>
-      {label}{" "}
-      <input
-        type="number"
-        value={value}
-        onChange={(e)=>setter(Number(e.target.value))}
-        style={{padding:"6px", width:260}}
-      />
-    </label>
-  );
+  const handleUpdate = async () => {
+    await writeContractAsync({
+      abi,
+      address: contractAddress as `0x${string}`,
+      functionName: "updateEntry",
+      args: [Number(date), Number(weight), Number(caloriesIn), Number(caloriesOut), Number(steps)],
+    })
+  }
 
   return (
-    <main style={{maxWidth:720, margin:"40px auto", fontFamily:"system-ui"}}>
-      <h1 style={{fontSize:32, fontWeight:700}}>Log / Update Entry</h1>
+    <div className="flex items-center justify-center min-h-[80vh] bg-gradient-to-b from-green-50 to-white">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
+        <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
+          Log / Update Entry
+        </h1>
 
-      {field("Дата (YYYYMMDD)", date, setDate)}
-      {field("Вес (гр)", weight, setWeight)}
-      {field("Калории In", calIn, setCalIn)}
-      {field("Калории Out", calOut, setCalOut)}
-      {field("Шаги", steps, setSteps)}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Дата (YYYYMMDD)
+            </label>
+            <input
+              type="text"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-400 outline-none"
+            />
+          </div>
 
-      <div style={{display:"flex", gap:12, marginTop:12}}>
-        <button onClick={logEntry} disabled={loading!==null}
-          style={{padding:"10px 14px", border:"1px solid #ccc", borderRadius:8}}>
-          {loading==="log" ? "Подтвердите..." : "Добавить запись"}
-        </button>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Вес (гр)
+            </label>
+            <input
+              type="number"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-400 outline-none"
+            />
+          </div>
 
-        <button onClick={updateEntry} disabled={loading!==null}
-          style={{padding:"10px 14px", border:"1px solid #ccc", borderRadius:8}}>
-          {loading==="update" ? "Подтвердите..." : "Обновить запись"}
-        </button>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Калории In
+            </label>
+            <input
+              type="number"
+              value={caloriesIn}
+              onChange={(e) => setCaloriesIn(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-400 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Калории Out
+            </label>
+            <input
+              type="number"
+              value={caloriesOut}
+              onChange={(e) => setCaloriesOut(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-400 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Шаги
+            </label>
+            <input
+              type="number"
+              value={steps}
+              onChange={(e) => setSteps(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-400 outline-none"
+            />
+          </div>
+
+          <div className="flex gap-4 justify-center pt-4">
+            <button
+              onClick={handleLog}
+              className="bg-emerald-500 text-white px-4 py-2 rounded-lg shadow hover:bg-emerald-600 transition"
+            >
+              Добавить запись
+            </button>
+            <button
+              onClick={handleUpdate}
+              className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg shadow hover:bg-gray-300 transition"
+            >
+              Обновить запись
+            </button>
+          </div>
+        </div>
       </div>
-    </main>
-  );
+    </div>
+  )
 }
