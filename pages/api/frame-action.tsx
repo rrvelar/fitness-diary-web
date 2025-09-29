@@ -1,4 +1,5 @@
 // pages/api/frame-action.tsx
+import React from "react"
 import { createFrames, Button } from "frames.js/next"
 
 const frames = createFrames({
@@ -18,8 +19,10 @@ const handler = async (ctx: any) => {
         </div>
       ),
       buttons: [
-        Button({ text: "🔙 Назад", action: "post", target: "/api/frame-action" }),
-      ],
+        <Button key="back" action="post" target="/api/frame-action">
+          🔙 Назад
+        </Button>,
+      ] as unknown as [ReturnType<typeof Button>],
     }
   }
 
@@ -34,12 +37,10 @@ const handler = async (ctx: any) => {
       ),
       textInput: "20250929,79.3,2500,3000,12000",
       buttons: [
-        Button({
-          text: "✅ Сохранить",
-          action: "post",
-          target: "/api/frame-action?action=save",
-        }),
-      ],
+        <Button key="save" action="post" target="/api/frame-action?action=save">
+          ✅ Сохранить
+        </Button>,
+      ] as unknown as [ReturnType<typeof Button>],
     }
   }
 
@@ -55,8 +56,10 @@ const handler = async (ctx: any) => {
           </div>
         ),
         buttons: [
-          Button({ text: "🔙 Назад", action: "post", target: "/api/frame-action" }),
-        ],
+          <Button key="back3" action="post" target="/api/frame-action">
+            🔙 Назад
+          </Button>,
+        ] as unknown as [ReturnType<typeof Button>],
       }
     }
 
@@ -78,12 +81,10 @@ const handler = async (ctx: any) => {
         </div>
       ),
       buttons: [
-        Button({
-          text: "🔗 Подписать во встроенном кошельке",
-          action: "link",
-          target: url,
-        }),
-      ],
+        <Button key="sign" action="link" target={url}>
+          🔗 Подписать во встроенном кошельке
+        </Button>,
+      ] as unknown as [ReturnType<typeof Button>],
     }
   }
 
@@ -95,17 +96,13 @@ const handler = async (ctx: any) => {
       </div>
     ),
     buttons: [
-      Button({
-        text: "📖 Мои записи",
-        action: "post",
-        target: "/api/frame-action?action=entries",
-      }),
-      Button({
-        text: "➕ Добавить",
-        action: "post",
-        target: "/api/frame-action?action=log",
-      }),
-    ],
+      <Button key="entries" action="post" target="/api/frame-action?action=entries">
+        📖 Мои записи
+      </Button>,
+      <Button key="log" action="post" target="/api/frame-action?action=log">
+        ➕ Добавить
+      </Button>,
+    ] as unknown as [ReturnType<typeof Button>, ReturnType<typeof Button>],
   }
 }
 
