@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import Head from "next/head"
 import { readContract } from "@wagmi/core"
 import { useAccount } from "wagmi"
 import { wagmiClientConfig } from "../lib/wagmi"   // ✅ правильный импорт
@@ -34,7 +35,7 @@ export default function HomePage() {
     let count = 10n
     while (count > 0n) {
       try {
-        const result = await readContract(wagmiClientConfig, {   // ✅ заменил config
+        const result = await readContract(wagmiClientConfig, {
           abi,
           address: CONTRACT_ADDRESS,
           functionName: "getDates",
@@ -60,7 +61,7 @@ export default function HomePage() {
 
       const fetched: Entry[] = []
       for (let d of dates.slice(-3)) {
-        const entry = await readContract(wagmiClientConfig, {   // ✅ заменил config
+        const entry = await readContract(wagmiClientConfig, {
           abi,
           address: CONTRACT_ADDRESS,
           functionName: "getEntry",
@@ -95,73 +96,96 @@ export default function HomePage() {
   }))
 
   return (
-    <div className="flex flex-col items-center p-6 space-y-6">
-      <h1 className="text-3xl font-bold text-emerald-700">Мой дневник фитнеса</h1>
+    <>
+      <Head>
+        <title>Fitness Diary</title>
+        <meta property="og:title" content="Fitness Diary Frame" />
+        <meta property="og:description" content="Добавь запись прямо из Warpcast" />
+        <meta property="og:image" content="https://fitness-diary-web.vercel.app/preview.png" />
 
-      {!isConnected ? (
-        <Card className="w-full max-w-md text-center p-6 shadow-md border border-gray-200">
-          <CardHeader>
-            <CardTitle className="text-lg text-gray-800">
-              Подключите кошелёк, чтобы начать
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-center">
-              <ConnectButton showBalance={false} accountStatus="address" />
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <Link href="/log">
-            <Button className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-lg shadow">
-              ➕ Добавить запись
-            </Button>
-          </Link>
+        {/* 🔑 Farcaster frame мета-теги */}
+        <meta property="fc:frame" content="vNext" />
+        <meta property="fc:frame:image" content="https://fitness-diary-web.vercel.app/preview.png" />
 
-          <Card className="w-full max-w-2xl">
+        <meta property="fc:frame:button:1" content="📖 Мои записи" />
+        <meta property="fc:frame:button:1:action" content="post" />
+        <meta property="fc:frame:button:1:target" content="https://fitness-diary-web.vercel.app/api/frame-action?action=entries" />
+
+        <meta property="fc:frame:button:2" content="➕ Добавить" />
+        <meta property="fc:frame:button:2:action" content="post" />
+        <meta property="fc:frame:button:2:target" content="https://fitness-diary-web.vercel.app/api/frame-action?action=log" />
+      </Head>
+
+      <div className="flex flex-col items-center p-6 space-y-6">
+        <h1 className="text-3xl font-bold text-emerald-700">Мой дневник фитнеса</h1>
+
+        {!isConnected ? (
+          <Card className="w-full max-w-md text-center p-6 shadow-md border border-gray-200">
             <CardHeader>
-              <CardTitle className="text-lg text-emerald-700">Динамика веса</CardTitle>
+              <CardTitle className="text-lg text-gray-800">
+                Подключите кошелёк, чтобы начать
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={chartData}>
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="weight" stroke="#10b981" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="text-gray-500">Нет данных для графика</p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="w-full max-w-2xl">
-            <CardHeader>
-              <CardTitle className="text-lg text-emerald-700">Последние записи</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading && <p className="text-gray-500">Загрузка...</p>}
-              {!loading && entries.length === 0 && <p className="text-gray-600">Записей пока нет</p>}
-              <div className="space-y-4">
-                {entries.map((entry, i) => (
-                  <div key={i} className="border rounded-lg p-3 shadow-sm bg-white">
-                    <p className="text-sm text-gray-800 font-medium">{formatDate(entry.date)}</p>
-                    <p className="font-semibold text-emerald-700">
-                      Вес: {(entry.weightGrams / 1000).toFixed(1)} кг
-                    </p>
-                    <p className="text-sm text-gray-800">Калории: {entry.caloriesIn} / {entry.caloriesOut}</p>
-                    <p className="text-sm text-gray-800">Шаги: {entry.steps}</p>
-                  </div>
-                ))}
+              <div className="flex justify-center">
+                <ConnectButton showBalance={false} accountStatus="address" />
               </div>
             </CardContent>
           </Card>
-        </>
-      )}
-    </div>
+        ) : (
+          <>
+            <Link href="/log">
+              <Button className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-lg shadow">
+                ➕ Добавить запись
+              </Button>
+            </Link>
+
+            <Card className="w-full max-w-2xl">
+              <CardHeader>
+                <CardTitle className="text-lg text-emerald-700">Динамика веса</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={chartData}>
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="weight" stroke="#10b981" strokeWidth={2} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="text-gray-500">Нет данных для графика</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="w-full max-w-2xl">
+              <CardHeader>
+                <CardTitle className="text-lg text-emerald-700">Последние записи</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading && <p className="text-gray-500">Загрузка...</p>}
+                {!loading && entries.length === 0 && <p className="text-gray-600">Записей пока нет</p>}
+                <div className="space-y-4">
+                  {entries.map((entry, i) => (
+                    <div key={i} className="border rounded-lg p-3 shadow-sm bg-white">
+                      <p className="text-sm text-gray-800 font-medium">{formatDate(entry.date)}</p>
+                      <p className="font-semibold text-emerald-700">
+                        Вес: {(entry.weightGrams / 1000).toFixed(1)} кг
+                      </p>
+                      <p className="text-sm text-gray-800">
+                        Калории: {entry.caloriesIn} / {entry.caloriesOut}
+                      </p>
+                      <p className="text-sm text-gray-800">Шаги: {entry.steps}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+      </div>
+    </>
   )
 }
