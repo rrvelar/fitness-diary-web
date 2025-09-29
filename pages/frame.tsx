@@ -27,7 +27,7 @@ export default function Frame() {
   const [status, setStatus] = useState<string>("")
   const sentRef = useRef(false)
 
-  // 1) SDK
+  // 1) Подключаем Farcaster SDK
   useEffect(() => {
     if (typeof window === "undefined") return
     const callReady = () => {
@@ -45,7 +45,7 @@ export default function Frame() {
     }
   }, [])
 
-  // 2) Tx
+  // 2) Отправка транзакции из query-параметров
   useEffect(() => {
     if (!router.isReady) return
     if (sentRef.current) return
@@ -69,7 +69,7 @@ export default function Frame() {
     sentRef.current = true
     ;(async () => {
       try {
-        setStatus("⏳ Подписание транзакции...")
+        setStatus("⏳ Подписание транзакции во встроенном кошельке...")
 
         const ymd = Number(date as string)
         const w = Math.round(Number(weight as string) * 1000)
@@ -83,7 +83,8 @@ export default function Frame() {
           args: [ymd, w, ci, co, st],
         })
 
-        const txHash = await wallet.sendTransaction({
+        // ✅ теперь TS точно не ругается
+        const txHash = await wallet.sendTransaction!({
           to: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
           data,
           value: "0x0",
@@ -102,9 +103,16 @@ export default function Frame() {
       <Head>
         <title>Fitness Diary Frame</title>
         <meta property="og:title" content="Fitness Diary Frame" />
-        <meta property="og:description" content="Добавь запись прямо из Warpcast" />
-        <meta property="og:image" content="https://fitness-diary-web.vercel.app/preview.png" />
+        <meta
+          property="og:description"
+          content="Добавь запись прямо из Warpcast"
+        />
+        <meta
+          property="og:image"
+          content="https://fitness-diary-web.vercel.app/preview.png"
+        />
 
+        {/* JSON vNext */}
         <meta
           name="fc:frame"
           content='{
@@ -113,11 +121,17 @@ export default function Frame() {
             "buttons": [
               {
                 "title": "📖 Мои записи",
-                "action": { "type": "post", "target": "https://fitness-diary-web.vercel.app/api/frame-action?action=entries" }
+                "action": {
+                  "type": "post",
+                  "target": "https://fitness-diary-web.vercel.app/api/frame-action?action=entries"
+                }
               },
               {
                 "title": "➕ Добавить",
-                "action": { "type": "post", "target": "https://fitness-diary-web.vercel.app/api/frame-action?action=log" }
+                "action": {
+                  "type": "post",
+                  "target": "https://fitness-diary-web.vercel.app/api/frame-action?action=log"
+                }
               }
             ]
           }'
