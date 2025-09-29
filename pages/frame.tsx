@@ -10,11 +10,13 @@ declare global {
     farcaster?: {
       actions?: { ready: () => void }
       wallet?: {
-        sendTransaction: (tx: {
+        getAccounts?: () => Promise<string[]>
+        sendTransaction?: (tx: {
           to: `0x${string}`
           data?: `0x${string}`
           value?: `0x${string}`
         }) => Promise<`0x${string}`>
+        signTypedData?: (typedData: unknown) => Promise<`0x${string}`>
       }
     }
   }
@@ -57,7 +59,7 @@ export default function Frame() {
       typeof steps !== "undefined"
 
     if (!haveAll) return
-    if (!window.farcaster?.wallet) {
+    if (!window.farcaster?.wallet?.sendTransaction) {
       setStatus("⚠️ Встроенный кошелёк Warpcast недоступен в этой среде")
       return
     }
@@ -107,7 +109,7 @@ export default function Frame() {
           content="https://fitness-diary-web.vercel.app/preview.png"
         />
 
-        {/* JSON vNext — как у тебя было */}
+        {/* JSON vNext */}
         <meta
           name="fc:frame"
           content='{
