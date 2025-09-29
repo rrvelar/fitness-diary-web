@@ -1,4 +1,4 @@
-// pages/api/frame-action.ts
+// pages/api/frame-action.tsx
 import React from "react"
 import { createFrames, Button } from "frames.js/next"
 
@@ -22,8 +22,8 @@ const handler = async (ctx: any) => {
         <Button key="back" action="post" target="/api/frame-action">
           🔙 Назад
         </Button>,
-      ],
-    } as const
+      ] satisfies any[],
+    }
   }
 
   if (action === "log") {
@@ -40,8 +40,8 @@ const handler = async (ctx: any) => {
         <Button key="save" action="post" target="/api/frame-action?action=save">
           ✅ Сохранить
         </Button>,
-      ],
-    } as const
+      ] satisfies any[],
+    }
   }
 
   if (action === "save") {
@@ -59,8 +59,8 @@ const handler = async (ctx: any) => {
           <Button key="back3" action="post" target="/api/frame-action">
             🔙 Назад
           </Button>,
-        ],
-      } as const
+        ] satisfies any[],
+      }
     }
 
     const [dateStr, weightStr, calInStr, calOutStr, stepsStr] = parts
@@ -84,8 +84,8 @@ const handler = async (ctx: any) => {
         <Button key="sign" action="link" target={url}>
           🔗 Подписать во встроенном кошельке
         </Button>,
-      ],
-    } as const
+      ] satisfies any[],
+    }
   }
 
   // fallback — ОБЯЗАТЕЛЕН
@@ -102,8 +102,8 @@ const handler = async (ctx: any) => {
       <Button key="log" action="post" target="/api/frame-action?action=log">
         ➕ Добавить
       </Button>,
-    ],
-  } as const
+    ] satisfies any[],
+  }
 }
 
 export default frames(handler)
