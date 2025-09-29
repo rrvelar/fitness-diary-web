@@ -19,10 +19,8 @@ const handler = async (ctx: any) => {
         </div>
       ),
       buttons: [
-        <Button key="back" action="post" target="/api/frame-action">
-          🔙 Назад
-        </Button>,
-      ] as [React.ReactElement],
+        Button({ label: "🔙 Назад", action: "post", target: "/api/frame-action" }),
+      ],
     }
   }
 
@@ -37,10 +35,8 @@ const handler = async (ctx: any) => {
       ),
       textInput: "20250929,79.3,2500,3000,12000",
       buttons: [
-        <Button key="save" action="post" target="/api/frame-action?action=save">
-          ✅ Сохранить
-        </Button>,
-      ] as [React.ReactElement],
+        Button({ label: "✅ Сохранить", action: "post", target: "/api/frame-action?action=save" }),
+      ],
     }
   }
 
@@ -56,10 +52,8 @@ const handler = async (ctx: any) => {
           </div>
         ),
         buttons: [
-          <Button key="back3" action="post" target="/api/frame-action">
-            🔙 Назад
-          </Button>,
-        ] as [React.ReactElement],
+          Button({ label: "🔙 Назад", action: "post", target: "/api/frame-action" }),
+        ],
       }
     }
 
@@ -81,10 +75,8 @@ const handler = async (ctx: any) => {
         </div>
       ),
       buttons: [
-        <Button key="sign" action="link" target={url}>
-          🔗 Подписать во встроенном кошельке
-        </Button>,
-      ] as [React.ReactElement],
+        Button({ label: "🔗 Подписать во встроенном кошельке", action: "link", target: url }),
+      ],
     }
   }
 
@@ -96,13 +88,9 @@ const handler = async (ctx: any) => {
       </div>
     ),
     buttons: [
-      <Button key="entries" action="post" target="/api/frame-action?action=entries">
-        📖 Мои записи
-      </Button>,
-      <Button key="log" action="post" target="/api/frame-action?action=log">
-        ➕ Добавить
-      </Button>,
-    ] as [React.ReactElement, React.ReactElement],
+      Button({ label: "📖 Мои записи", action: "post", target: "/api/frame-action?action=entries" }),
+      Button({ label: "➕ Добавить", action: "post", target: "/api/frame-action?action=log" }),
+    ],
   }
 }
 
