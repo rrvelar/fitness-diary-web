@@ -9,6 +9,9 @@ import {
   walletConnectWallet,
 } from "@rainbow-me/rainbowkit/wallets"
 
+// 🔹 Алхеми API ключ
+const ALCHEMY_API_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || ""
+
 // =========================
 // 1. Конфиг для клиента (RainbowKit)
 // =========================
@@ -16,11 +19,7 @@ const connectors = connectorsForWallets(
   [
     {
       groupName: "Recommended",
-      wallets: [
-        metaMaskWallet,
-        coinbaseWallet,
-        walletConnectWallet,
-      ],
+      wallets: [metaMaskWallet, coinbaseWallet, walletConnectWallet],
     },
   ],
   {
@@ -33,7 +32,9 @@ export const wagmiClientConfig = createConfig({
   chains: [base],
   connectors,
   transports: {
-    [base.id]: http(),
+    [base.id]: http(
+      `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
+    ),
   },
 })
 
@@ -43,6 +44,8 @@ export const wagmiClientConfig = createConfig({
 export const wagmiServerConfig = createConfig({
   chains: [base],
   transports: {
-    [base.id]: http(),
+    [base.id]: http(
+      `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}`
+    ),
   },
 })
