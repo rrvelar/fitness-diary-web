@@ -1,44 +1,59 @@
 import { NextApiRequest, NextApiResponse } from "next"
-import { createWalletClient, http } from "viem"
-import { privateKeyToAccount } from "viem/accounts"
-import { base } from "viem/chains"
+import { writeContract } from "@wagmi/core"
+import { config } from "../../lib/wagmi"
 import abi from "../../abi/FitnessDiary.json"
 import contractAddress from "../../abi/FitnessDiary.address.json"
 
-const CONTRACT_ADDRESS = contractAddress.address as `0x${string}`
-
-// ⚠️ Секретный ключ сервисного аккаунта (лучше в .env)
-const PRIVATE_KEY = process.env.FRAME_PRIVATE_KEY as `0x${string}`
-
-const account = privateKeyToAccount(PRIVATE_KEY)
-const client = createWalletClient({
-  account,
-  chain: base,
-  transport: http(process.env.NEXT_PUBLIC_ALCHEMY_URL), // твой Alchemy endpoint
-})
+const CONTRACT_ADDRESS = contractAddress.address as unknown as `0x${string}`
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") return res.status(405).send("Method not allowed")
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" })
+    return
+  }
 
   try {
     const { date, weight, caloriesIn, caloriesOut, steps } = req.body
 
-    const txHash = await client.writeContract({
-      address: CONTRACT_ADDRESS,
+    if (!date || !weight || !caloriesIn || !caloriesOut || !steps) {
+      res.status(400).json({ error: "Missing fields" })
+      return
+    }
+
+    const ymd = date.toString().replaceAll("-", "")
+
+    // запись в контракт
+    await writeContract(config, {
       abi,
+      address: CONTRACT_ADDRESS,
       functionName: "logEntry",
       args: [
-        Number(date),               // 20250929
-        Math.round(Number(weight) * 1000), 
+        Number(ymd),
+        Math.round(Number(weight) * 1000),
         Number(caloriesIn),
         Number(caloriesOut),
         Number(steps),
       ],
     })
 
-    return res.status(200).json({ success: true, txHash })
+    res.status(200).send(`
+      <html>
+        <body style="text-align:center; padding:20px; font-family:sans-serif;">
+          <h2>✅ Запись успешно добавлена!</h2>
+          <a href="/api/frame">Добавить ещё</a>
+        </body>
+      </html>
+    `)
   } catch (err: any) {
-    console.error("Frame API error:", err)
-    return res.status(500).json({ success: false, error: err.message })
+    console.error("Ошибка:", err)
+    res.status(500).send(`
+      <html>
+        <body style="text-align:center; padding:20px; font-family:sans-serif; color:red;">
+          <h2>❌ Ошибка при добавлении записи</h2>
+          <p>${err.message}</p>
+          <a href="/api/frame">Назад</a>
+        </body>
+      </html>
+    `)
   }
 }
