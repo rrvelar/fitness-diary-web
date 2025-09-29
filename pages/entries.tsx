@@ -1,100 +1,120 @@
-import { useEffect, useState } from "react"
-import { useAccount } from "wagmi"
-import { readContract } from "wagmi/actions"
-import { config } from "../lib/wagmi"
-import abi from "../abi/FitnessDiary.json"
-import contractAddressJson from "../abi/FitnessDiary.address.json" assert { type: "json" }
+// app/entries/page.tsx
 
-const CONTRACT_ADDRESS = contractAddressJson.address as `0x${string}`
+"use client"
+
+import { useEffect, useState } from "react"
+import { readContract } from "@wagmi/core"
+import { config } from "@/lib/wagmi"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import abi from "@/abi/FitnessDiary.json"
+import contractAddress from "@/abi/FitnessDiary.address.json"
+import { useAccount } from "wagmi"
 
 type Entry = {
-  date: string
+  date: number
   weight: number
-  in: number
-  out: number
+  caloriesIn: number
+  caloriesOut: number
   steps: number
 }
 
+const CONTRACT_ADDRESS = contractAddress as `0x${string}`
+
 export default function EntriesPage() {
-  const { address, isConnected } = useAccount()
+  const { address } = useAccount()
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [startIndex, setStartIndex] = useState(0)
+  const COUNT = 10
+
+  const loadEntries = async () => {
+    if (!address) return
+    setLoading(true)
+    setError(null)
+
+    try {
+      // загружаем список дат
+      const dates = (await readContract(config, {
+        address: CONTRACT_ADDRESS,
+        abi: abi,
+        functionName: "getDates",
+        args: [address, BigInt(startIndex), BigInt(COUNT)]
+      })) as any as bigint[]
+
+      if (!dates || dates.length === 0) {
+        setLoading(false)
+        return
+      }
+
+      // получаем каждую запись по дате
+      const newEntries: Entry[] = []
+      for (const d of dates) {
+        const entry = (await readContract(config, {
+          address: CONTRACT_ADDRESS,
+          abi: abi,
+          functionName: "getEntry",
+          args: [address, d]
+        })) as any
+
+        newEntries.push({
+          date: Number(d),
+          weight: Number(entry[0]) / 1000, // граммы → кг
+          caloriesIn: Number(entry[1]),
+          caloriesOut: Number(entry[2]),
+          steps: Number(entry[3])
+        })
+      }
+
+      // добавляем новые записи в список
+      setEntries(prev => [...prev, ...newEntries])
+      setStartIndex(prev => prev + COUNT)
+    } catch (err: any) {
+      console.error(err)
+      setError("Ошибка при загрузке данных")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    if (!isConnected || !address) return
-
-    async function loadEntries() {
-      try {
-        setLoading(true)
-
-        let dates: bigint[] = []
-        try {
-          // пробуем взять до 50 записей
-          dates = (await readContract(config, {
-            address: CONTRACT_ADDRESS,
-            abi,
-            functionName: "getDates",
-            args: [address, BigInt(0), BigInt(50)],
-          })) as bigint[]
-        } catch (err: any) {
-          console.warn("⚠ getDates(50) не сработал, пробуем меньше:", err)
-          try {
-            dates = (await readContract(config, {
-              address: CONTRACT_ADDRESS,
-              abi,
-              functionName: "getDates",
-              args: [address, BigInt(0), BigInt(10)],
-            })) as bigint[]
-          } catch {
-            dates = []
-          }
-        }
-
-        const items: Entry[] = []
-        for (const d of dates) {
-          const entry: any = await readContract(config, {
-            address: CONTRACT_ADDRESS,
-            abi,
-            functionName: "getEntry",
-            args: [address, Number(d)],
-          })
-          if (entry.exists) {
-            items.push({
-              date: new Date(Number(entry.date) * 1000)
-                .toISOString()
-                .split("T")[0],
-              weight: Number(entry.weightGrams) / 1000,
-              in: Number(entry.caloriesIn),
-              out: Number(entry.caloriesOut),
-              steps: Number(entry.steps),
-            })
-          }
-        }
-
-        setEntries(items.reverse())
-      } catch (err) {
-        console.error("Ошибка при загрузке записей:", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     loadEntries()
-  }, [isConnected, address])
+  }, [address])
 
   return (
-    <div>
-      <h1>Мои записи</h1>
-      {loading && <p>Загрузка...</p>}
-      {!loading && entries.length === 0 && <p>Нет записей</p>}
-      <ul>
-        {entries.map((e, idx) => (
-          <li key={idx}>
-            {e.date} → вес: {e.weight} кг, калории: +{e.in} / -{e.out}, шаги:{" "}
-            {e.steps}
-          </li>
+    <div className="p-6 space-y-4">
+      <h1 className="text-2xl font-bold">Мои записи</h1>
+
+      {error && <p className="text-red-500">{error}</p>}
+
+      {entries.length === 0 && !loading && (
+        <p className="text-gray-500">У вас пока нет записей.</p>
+      )}
+
+      <div className="grid gap-4">
+        {entries.map((entry, i) => (
+          <Card key={`${entry.date}-${i}`}>
+            <CardHeader>
+              <CardTitle>
+                {new Date(entry.date * 1000).toLocaleDateString()}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1 text-sm">
+              <p>Вес: {entry.weight.toFixed(1)} кг</p>
+              <p>Калории (вход): {entry.caloriesIn}</p>
+              <p>Калории (расход): {entry.caloriesOut}</p>
+              <p>Шаги: {entry.steps}</p>
+            </CardContent>
+          </Card>
         ))}
-      </ul>
+      </div>
+
+      {loading && <p className="text-gray-500">Загрузка...</p>}
+
+      {!loading && entries.length > 0 && (
+        <Button onClick={loadEntries}>Показать ещё</Button>
+      )}
     </div>
   )
 }
