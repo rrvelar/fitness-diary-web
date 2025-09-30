@@ -118,14 +118,21 @@ export default function Frame() {
 
   // первый fetch и авто-пуллинг раз в 5 сек
   useEffect(() => {
-    if (!userAddress) return
-    fetchEntries()
-    if (pollRef.current !== null) window.clearInterval(pollRef.current)
-    pollRef.current = window.setInterval(fetchEntries, 5000)    return () => {
-      if (pollRef.current !== null) window.clearInterval(pollRef.current)
+  if (!userAddress) return
+  fetchEntries()
+
+  if (pollRef.current !== null) {
+    window.clearInterval(pollRef.current)
+  }
+
+  pollRef.current = window.setInterval(fetchEntries, 5000)
+
+  return () => {
+    if (pollRef.current !== null) {
+      window.clearInterval(pollRef.current)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userAddress])
+  }
+}, [userAddress])
 
   // 2) отправка записи через встроенный кошелёк (EIP-1193)
   const onSubmit = async () => {
