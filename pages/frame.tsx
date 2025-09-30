@@ -389,24 +389,24 @@ export default function Frame() {
         {/* Последние записи */}
         {view === "entries" && (
           <div className="space-y-3">
-            <div className="flex justify-between items-center flex-wrap gap-2">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
               <h2 className="font-semibold text-lg text-emerald-700">{t.lastEntries}</h2>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="border p-1 rounded text-gray-700"
+                  className="border p-1 rounded text-gray-700 w-full sm:w-auto"
                 />
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="border p-1 rounded text-gray-700"
+                  className="border p-1 rounded text-gray-700 w-full sm:w-auto"
                 />
                 <button
                   onClick={fetchEntries}
-                  className="bg-emerald-500 text-white px-3 py-1 rounded hover:bg-emerald-600 transition"
+                  className="bg-emerald-500 text-white px-3 py-1 rounded hover:bg-emerald-600 transition w-full sm:w-auto"
                 >
                   {t.update}
                 </button>
@@ -427,7 +427,7 @@ export default function Frame() {
                     a.download = "fitness-diary.csv"
                     a.click()
                   }}
-                  className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+                  className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition w-full sm:w-auto"
                 >
                   {t.export}
                 </button>
