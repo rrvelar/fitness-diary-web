@@ -1,16 +1,23 @@
 // pages/frame.tsx
 import Head from "next/head"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { encodeFunctionData } from "viem"
 import { createPublicClient, http } from "viem"
 import { base } from "viem/chains"
 import { sdk } from "@farcaster/miniapp-sdk"
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts"
 import abi from "../abi/FitnessDiary.json"
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`
 const ALCHEMY_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY!
 
-// публичный клиент для чтения
 const publicClient = createPublicClient({
   chain: base,
   transport: http(`https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`),
@@ -28,6 +35,7 @@ type Entry = {
 export default function Frame() {
   const [status, setStatus] = useState("")
   const [entries, setEntries] = useState<Entry[]>([])
+  const [userAddress, setUserAddress] = useState<`0x${string}` | null>(null)
 
   // форма
   const [date, setDate] = useState("")
@@ -36,7 +44,10 @@ export default function Frame() {
   const [calOut, setCalOut] = useState("")
   const [steps, setSteps] = useState("")
 
-  // Убираем splash
+  const recordsRef = useRef<HTMLDivElement>(null)
+  const formRef = useRef<HTMLDivElement>(null)
+  const chartRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     ;(async () => {
       try {
@@ -72,6 +83,8 @@ export default function Frame() {
       })
 
       const [from] = await provider.request({ method: "eth_accounts" })
+      setUserAddress(from)
+
       const txHash = await provider.request({
         method: "eth_sendTransaction",
         params: [
@@ -85,25 +98,25 @@ export default function Frame() {
       })
 
       setStatus(`✅ Успешно! tx: ${txHash}`)
-      fetchEntries()
+      fetchEntries(from)
     } catch (err: any) {
       setStatus(`❌ Ошибка: ${err.message || String(err)}`)
     }
   }
 
-  async function fetchEntries() {
+  async function fetchEntries(addr?: `0x${string}`) {
     try {
-      // берем аккаунт из Warpcast
-      const [from] = await provider.request({ method: "eth_accounts" })
+      const from = addr || userAddress
+      if (!from) return
 
       const dates = (await publicClient.readContract({
         abi,
         address: CONTRACT_ADDRESS,
         functionName: "getDates",
-        args: [from as `0x${string}`, 0n, 10n],
+        args: [from, 0n, 10n],
       })) as bigint[]
 
-      const recent = dates.slice(-3).map(Number)
+      const recent = dates.slice(-5).map(Number)
 
       const fetched: Entry[] = []
       for (let d of recent) {
@@ -111,7 +124,7 @@ export default function Frame() {
           abi,
           address: CONTRACT_ADDRESS,
           functionName: "getEntry",
-          args: [from as `0x${string}`, BigInt(d)],
+          args: [from, BigInt(d)],
         })) as unknown as Entry
 
         if (entry.exists) {
@@ -131,17 +144,20 @@ export default function Frame() {
     }
   }
 
-  // автообновление
   useEffect(() => {
-    fetchEntries()
-    const i = setInterval(fetchEntries, 5000)
+    const i = setInterval(() => fetchEntries(), 5000)
     return () => clearInterval(i)
-  }, [])
+  }, [userAddress])
 
   function formatDate(num: number) {
     const str = num.toString()
     return `${str.slice(6, 8)}/${str.slice(4, 6)}/${str.slice(0, 4)}`
   }
+
+  const chartData = entries.map(e => ({
+    date: formatDate(e.date),
+    weight: e.weightGrams / 1000,
+  }))
 
   return (
     <>
@@ -152,21 +168,30 @@ export default function Frame() {
       <main className="p-6 space-y-6">
         {/* меню */}
         <nav className="flex space-x-4 text-emerald-600 font-semibold">
-          <button onClick={fetchEntries}>📖 Записи</button>
-          <button>➕ Добавить</button>
-          <button>📊 График</button>
+          <button onClick={() => recordsRef.current?.scrollIntoView({ behavior: "smooth" })}>
+            📖 Записи
+          </button>
+          <button onClick={() => formRef.current?.scrollIntoView({ behavior: "smooth" })}>
+            ➕ Добавить
+          </button>
+          <button onClick={() => chartRef.current?.scrollIntoView({ behavior: "smooth" })}>
+            📊 График
+          </button>
         </nav>
 
         <h1 className="text-2xl font-bold text-emerald-700">Fitness Diary — Mini</h1>
         <p className="text-gray-600">{status || "Готово"}</p>
 
         {/* форма */}
-        <div className="space-y-2 border p-4 rounded-lg shadow bg-white">
+        <div ref={formRef} className="space-y-2 border p-4 rounded-lg shadow bg-white">
           <input
+            type="date"
             className="w-full border p-2 rounded text-black"
-            placeholder="Дата (YYYYMMDD)"
-            value={date}
-            onChange={e => setDate(e.target.value)}
+            value={date ? `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6, 8)}` : ""}
+            onChange={e => {
+              const val = e.target.value.replace(/-/g, "")
+              setDate(val)
+            }}
           />
           <input
             className="w-full border p-2 rounded text-black"
@@ -201,7 +226,7 @@ export default function Frame() {
         </div>
 
         {/* последние записи */}
-        <div className="space-y-3">
+        <div ref={recordsRef} className="space-y-3">
           <h2 className="font-semibold text-lg text-emerald-700">Последние записи</h2>
           {entries.length === 0 && <p className="text-gray-500">Записей пока нет</p>}
           {entries.map((e, i) => (
@@ -216,6 +241,23 @@ export default function Frame() {
               <p className="text-sm text-gray-800">Шаги: {e.steps}</p>
             </div>
           ))}
+        </div>
+
+        {/* график */}
+        <div ref={chartRef} className="space-y-3">
+          <h2 className="font-semibold text-lg text-emerald-700">📊 Динамика веса</h2>
+          {chartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={chartData}>
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="weight" stroke="#10b981" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-gray-500">Нет данных для графика</p>
+          )}
         </div>
       </main>
     </>
