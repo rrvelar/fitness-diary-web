@@ -156,6 +156,7 @@ export default function Frame() {
           args: [user, 0n, count],
         })) as bigint[]
       } catch (err: any) {
+        console.error("safeGetDates error:", err)
         if (!err.message?.includes("Out of bounds")) throw err
         count -= 1n
       }
@@ -168,12 +169,17 @@ export default function Frame() {
       if (!provider?.request) return
       const [user] = await provider.request({ method: "eth_accounts" })
       if (!user) return
+
+      console.log("👤 user:", user)
+
       setLoading(true)
 
       const datesBigInt = await safeGetDates(user as `0x${string}`)
-      const dates = datesBigInt.map(Number)
+      console.log("📅 datesBigInt:", datesBigInt)
 
+      const dates = datesBigInt.map(Number)
       const fetched: Entry[] = []
+
       for (let d of dates) {
         try {
           const entry = (await publicClient.readContract({
@@ -182,19 +188,27 @@ export default function Frame() {
             functionName: "getEntry",
             args: [user as `0x${string}`, BigInt(d)],
           })) as Entry
+
           if (entry.exists) {
-            fetched.push({
+            const parsed = {
               ...entry,
               date: Number(entry.date),
               weightGrams: Number(entry.weightGrams),
               caloriesIn: Number(entry.caloriesIn),
               caloriesOut: Number(entry.caloriesOut),
               steps: Number(entry.steps),
-            })
+            }
+            fetched.push(parsed)
           }
-        } catch {}
+        } catch (err) {
+          console.error(`❌ fetchEntry(${d}) error:`, err)
+        }
       }
+
+      console.log("✅ fetched entries:", fetched)
       setEntries(fetched.sort((a, b) => b.date - a.date))
+    } catch (err) {
+      console.error("fetchEntries error:", err)
     } finally {
       setLoading(false)
     }
@@ -220,10 +234,13 @@ export default function Frame() {
     })
 
     const [from] = await provider.request({ method: "eth_accounts" })
-    await provider.request({
+    const txHash = await provider.request({
       method: "eth_sendTransaction",
       params: [{ from, to: CONTRACT_ADDRESS, data, value: "0x0" }],
     })
+
+    console.log("✅ logEntry txHash:", txHash)
+
     fetchEntries()
   }
 
