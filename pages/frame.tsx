@@ -17,6 +17,50 @@ import {
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`
 
+// Переводы
+const translations = {
+  ru: {
+    ready: "Готово",
+    log: "➕ Добавить",
+    entries: "📖 Записи",
+    chart: "📊 График",
+    stats: "🏆 Статистика",
+    lastEntries: "Последние записи",
+    update: "🔄 Обновить",
+    export: "💾 Экспорт",
+    noEntries: "Записей пока нет",
+    weight: "Вес",
+    calories: "Калории",
+    steps: "Шаги",
+    statsTitle: "📊 Общая статистика",
+    avgWeight: "Средний вес",
+    avgIn: "Средний калораж In",
+    avgOut: "Средний калораж Out",
+    maxSteps: "Макс. шагов",
+    minWeight: "Мин. вес",
+  },
+  en: {
+    ready: "Ready",
+    log: "➕ Add",
+    entries: "📖 Entries",
+    chart: "📊 Chart",
+    stats: "🏆 Stats",
+    lastEntries: "Recent entries",
+    update: "🔄 Refresh",
+    export: "💾 Export",
+    noEntries: "No records yet",
+    weight: "Weight",
+    calories: "Calories",
+    steps: "Steps",
+    statsTitle: "📊 Overall stats",
+    avgWeight: "Avg. weight",
+    avgIn: "Avg. calories In",
+    avgOut: "Avg. calories Out",
+    maxSteps: "Max. steps",
+    minWeight: "Min. weight",
+  },
+}
+
 type Entry = {
   date: number
   weightGrams: number
@@ -27,6 +71,9 @@ type Entry = {
 }
 
 export default function Frame() {
+  const [lang, setLang] = useState<"ru" | "en">("ru")
+  const t = translations[lang]
+
   const [status, setStatus] = useState("")
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(false)
@@ -44,8 +91,9 @@ export default function Frame() {
   const [endDate, setEndDate] = useState("")
 
   const pollRef = useRef<number | null>(null)
+  const provider = sdk.wallet.ethProvider
 
-  // убираем splash
+  // splash off
   useEffect(() => {
     ;(async () => {
       try {
@@ -55,8 +103,6 @@ export default function Frame() {
       }
     })()
   }, [])
-
-  const provider = sdk.wallet.ethProvider
 
   // безопасный вызов getDates
   async function safeGetDates(user: `0x${string}`): Promise<bigint[]> {
@@ -74,7 +120,6 @@ export default function Frame() {
         if (err.message?.includes("Out of bounds")) {
           count -= 1n
         } else {
-          console.error("safeGetDates error:", err)
           throw err
         }
       }
@@ -102,7 +147,6 @@ export default function Frame() {
             functionName: "getEntry",
             args: [user as `0x${string}`, BigInt(d)],
           })) as Entry
-
           if (entry.exists) {
             fetched.push({
               ...entry,
@@ -113,14 +157,9 @@ export default function Frame() {
               steps: Number(entry.steps),
             })
           }
-        } catch (err) {
-          console.error(`fetchEntry(${d}) error:`, err)
-        }
+        } catch {}
       }
-
       setEntries(fetched.sort((a, b) => b.date - a.date))
-    } catch (err) {
-      console.error("fetchEntries error", err)
     } finally {
       setLoading(false)
     }
@@ -129,14 +168,14 @@ export default function Frame() {
   async function logEntry() {
     try {
       if (!date || !weight || !calIn || !calOut || !steps) {
-        alert("⚠️ Заполни все поля")
+        alert("⚠️ Fill all fields")
         return
       }
-      if (!provider?.request) throw new Error("Warpcast кошелёк недоступен")
+      if (!provider?.request) throw new Error("Wallet not available")
 
-      setStatus("⏳ Отправка транзакции...")
+      setStatus("⏳ Sending transaction...")
 
-      const ymd = Number(date.replace(/-/g, "")) // yyyy-mm-dd → yyyymmdd
+      const ymd = Number(date.replace(/-/g, ""))
       const w = Math.round(Number(weight) * 1000)
       const ci = Number(calIn)
       const co = Number(calOut)
@@ -151,25 +190,17 @@ export default function Frame() {
       const [from] = await provider.request({ method: "eth_accounts" })
       const txHash = await provider.request({
         method: "eth_sendTransaction",
-        params: [
-          {
-            from,
-            to: CONTRACT_ADDRESS,
-            data,
-            value: "0x0",
-          },
-        ],
+        params: [{ from, to: CONTRACT_ADDRESS, data, value: "0x0" }],
       })
 
-      setStatus(`✅ Успешно! tx: ${txHash}`)
+      setStatus(`✅ Success! tx: ${txHash}`)
       fetchEntries()
     } catch (err: any) {
-      console.error("logEntry error:", err)
-      setStatus(`❌ Ошибка: ${err.message || String(err)}`)
+      setStatus(`❌ Error: ${err.message || String(err)}`)
     }
   }
 
-  // автообновление раз в 30 секунд
+  // автообновление раз в 30 сек
   useEffect(() => {
     fetchEntries()
     if (pollRef.current !== null) window.clearInterval(pollRef.current)
@@ -181,7 +212,8 @@ export default function Frame() {
 
   function formatDate(num: number) {
     const str = num.toString()
-    return `${str.slice(6, 8)}/${str.slice(4, 6)}/${str.slice(0, 4)}`
+    if (lang === "ru") return `${str.slice(6, 8)}/${str.slice(4, 6)}/${str.slice(0, 4)}`
+    return `${str.slice(4, 6)}/${str.slice(6, 8)}/${str.slice(0, 4)}`
   }
 
   const chartData = entries.map((e) => ({
@@ -191,15 +223,13 @@ export default function Frame() {
     calOut: e.caloriesOut,
   }))
 
-  // 📊 статистика
   function getStats() {
     if (entries.length === 0) return null
     const avgWeight =
-      entries.reduce((sum, e) => sum + e.weightGrams, 0) / entries.length / 1000
-    const avgIn =
-      entries.reduce((sum, e) => sum + e.caloriesIn, 0) / entries.length
+      entries.reduce((s, e) => s + e.weightGrams, 0) / entries.length / 1000
+    const avgIn = entries.reduce((s, e) => s + e.caloriesIn, 0) / entries.length
     const avgOut =
-      entries.reduce((sum, e) => sum + e.caloriesOut, 0) / entries.length
+      entries.reduce((s, e) => s + e.caloriesOut, 0) / entries.length
     const maxSteps = Math.max(...entries.map((e) => e.steps))
     const minWeight = Math.min(...entries.map((e) => e.weightGrams)) / 1000
     return { avgWeight, avgIn, avgOut, maxSteps, minWeight }
@@ -207,10 +237,9 @@ export default function Frame() {
 
   const stats = getStats()
 
-  // 💾 экспорт в CSV
   function exportCSV() {
     if (entries.length === 0) return
-    const header = "Дата,Вес,Калории In,Калории Out,Шаги\n"
+    const header = `${t.weight},${t.calories} In,${t.calories} Out,${t.steps}\n`
     const rows = entries
       .map(
         (e) =>
@@ -227,7 +256,6 @@ export default function Frame() {
     a.click()
   }
 
-  // фильтр по датам
   const filteredEntries = entries.filter((e) => {
     if (startDate && e.date < Number(startDate.replace(/-/g, ""))) return false
     if (endDate && e.date > Number(endDate.replace(/-/g, ""))) return false
@@ -241,22 +269,31 @@ export default function Frame() {
       </Head>
 
       <main className="min-h-screen p-6 space-y-6 bg-gradient-to-b from-gray-50 to-gray-100">
-        <h1 className="text-3xl font-extrabold text-emerald-700 text-center">
-          Fitness Diary — Mini
-        </h1>
-        <p className="text-center text-gray-600">{status || "Готово"}</p>
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-extrabold text-emerald-700 text-center">
+            Fitness Diary — Mini
+          </h1>
+          <button
+            onClick={() => setLang(lang === "ru" ? "en" : "ru")}
+            className="px-3 py-1 rounded border border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+          >
+            {lang === "ru" ? "EN" : "RU"}
+          </button>
+        </div>
+
+        <p className="text-center text-gray-700">{status || t.ready}</p>
 
         {/* меню */}
-        <nav className="flex justify-center gap-3 flex-wrap">
+        <nav className="grid grid-cols-2 sm:flex sm:justify-center gap-3">
           {[
-            ["entries", "📖 Записи"],
-            ["log", "➕ Добавить"],
-            ["chart", "📊 График"],
-            ["stats", "🏆 Статистика"],
+            ["entries", t.entries],
+            ["log", t.log],
+            ["chart", t.chart],
+            ["stats", t.stats],
           ].map(([key, label]) => (
             <button
               key={key}
-              className={`px-4 py-2 rounded-lg transition ${
+              className={`px-4 py-2 rounded-lg w-full sm:w-auto transition font-medium ${
                 view === key
                   ? "bg-emerald-600 text-white"
                   : "bg-white text-emerald-700 border border-emerald-600 hover:bg-emerald-50"
@@ -279,48 +316,34 @@ export default function Frame() {
             />
             <input
               className="w-full border p-2 rounded text-gray-900"
-              placeholder="Вес (кг)"
+              placeholder={`${t.weight} (кг)`}
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
             />
             <input
               className="w-full border p-2 rounded text-gray-900"
-              placeholder="Калории In"
+              placeholder={`${t.calories} In`}
               value={calIn}
               onChange={(e) => setCalIn(e.target.value)}
             />
             <input
               className="w-full border p-2 rounded text-gray-900"
-              placeholder="Калории Out"
+              placeholder={`${t.calories} Out`}
               value={calOut}
               onChange={(e) => setCalOut(e.target.value)}
             />
             <input
               className="w-full border p-2 rounded text-gray-900"
-              placeholder="Шаги"
+              placeholder={t.steps}
               value={steps}
               onChange={(e) => setSteps(e.target.value)}
             />
-            <div className="flex gap-2">
-              <button
-                onClick={logEntry}
-                className="bg-emerald-500 text-white px-4 py-2 rounded hover:bg-emerald-600 w-full transition"
-              >
-                ➕ Добавить запись
-              </button>
-              <button
-                onClick={() => {
-                  setDate("")
-                  setWeight("")
-                  setCalIn("")
-                  setCalOut("")
-                  setSteps("")
-                }}
-                className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 transition"
-              >
-                🧹 Очистить
-              </button>
-            </div>
+            <button
+              onClick={logEntry}
+              className="bg-emerald-500 text-white px-4 py-2 rounded hover:bg-emerald-600 w-full transition"
+            >
+              {t.log}
+            </button>
           </div>
         )}
 
@@ -329,7 +352,7 @@ export default function Frame() {
           <div className="space-y-3">
             <div className="flex justify-between items-center flex-wrap gap-2">
               <h2 className="font-semibold text-lg text-emerald-700">
-                Последние записи
+                {t.lastEntries}
               </h2>
               <div className="flex gap-2">
                 <input
@@ -348,19 +371,19 @@ export default function Frame() {
                   onClick={fetchEntries}
                   className="bg-emerald-500 text-white px-3 py-1 rounded hover:bg-emerald-600 transition"
                 >
-                  🔄 Обновить
+                  {t.update}
                 </button>
                 <button
                   onClick={exportCSV}
                   className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
                 >
-                  💾 Экспорт
+                  {t.export}
                 </button>
               </div>
             </div>
-            {loading && <p className="text-gray-500">Загрузка...</p>}
+            {loading && <p className="text-gray-500">Loading...</p>}
             {!loading && filteredEntries.length === 0 && (
-              <p className="text-gray-500">Записей пока нет</p>
+              <p className="text-gray-500">{t.noEntries}</p>
             )}
             {filteredEntries.map((e, i) => (
               <div
@@ -369,14 +392,13 @@ export default function Frame() {
               >
                 <p className="text-sm text-gray-500">{formatDate(e.date)}</p>
                 <p className="font-semibold text-emerald-700 text-lg">
-                  Вес: {(e.weightGrams / 1000).toFixed(1)} кг
+                  {t.weight}: {(e.weightGrams / 1000).toFixed(1)} кг
                 </p>
                 <p className="text-sm text-gray-700">
-                  Калории:{" "}
-                  <span className="font-medium">{e.caloriesIn}</span> /{" "}
+                  {t.calories}: <span className="font-medium">{e.caloriesIn}</span> /{" "}
                   <span className="font-medium">{e.caloriesOut}</span>
                 </p>
-                <p className="text-sm text-gray-700">Шаги: {e.steps}</p>
+                <p className="text-sm text-gray-700">{t.steps}: {e.steps}</p>
               </div>
             ))}
           </div>
@@ -392,31 +414,13 @@ export default function Frame() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="weight"
-                    stroke="#10b981"
-                    strokeWidth={2}
-                    name="Вес (кг)"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="calIn"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    name="Калории In"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="calOut"
-                    stroke="#ef4444"
-                    strokeWidth={2}
-                    name="Калории Out"
-                  />
+                  <Line type="monotone" dataKey="weight" stroke="#10b981" strokeWidth={2} name={`${t.weight} (кг)`} />
+                  <Line type="monotone" dataKey="calIn" stroke="#3b82f6" strokeWidth={2} name={`${t.calories} In`} />
+                  <Line type="monotone" dataKey="calOut" stroke="#ef4444" strokeWidth={2} name={`${t.calories} Out`} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-gray-500">Нет данных для графика</p>
+              <p className="text-gray-500">Нет данных</p>
             )}
           </div>
         )}
@@ -424,14 +428,12 @@ export default function Frame() {
         {/* Статистика */}
         {view === "stats" && stats && (
           <div className="bg-white p-6 rounded-lg shadow space-y-2 text-center">
-            <h2 className="text-lg font-bold text-emerald-700">
-              📊 Общая статистика
-            </h2>
-            <p>Средний вес: {stats.avgWeight.toFixed(1)} кг</p>
-            <p>Средний калораж In: {stats.avgIn.toFixed(0)}</p>
-            <p>Средний калораж Out: {stats.avgOut.toFixed(0)}</p>
-            <p>Макс. шагов: {stats.maxSteps}</p>
-            <p>Мин. вес: {stats.minWeight.toFixed(1)} кг</p>
+            <h2 className="text-lg font-bold text-emerald-700">{t.statsTitle}</h2>
+            <p>{t.avgWeight}: {stats.avgWeight.toFixed(1)} кг</p>
+            <p>{t.avgIn}: {stats.avgIn.toFixed(0)}</p>
+            <p>{t.avgOut}: {stats.avgOut.toFixed(0)}</p>
+            <p>{t.maxSteps}: {stats.maxSteps}</p>
+            <p>{t.minWeight}: {stats.minWeight.toFixed(1)} кг</p>
           </div>
         )}
       </main>
