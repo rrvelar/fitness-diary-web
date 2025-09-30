@@ -46,6 +46,8 @@ const translations = {
     notAchieved: "❌ Пока нет",
     calorieBalance: "Баланс калорий",
     save: "💾 Сохранить",
+    newStart: "🆕 Новый старт",
+    newStartHint: "Не удаляет данные, а считает записи только с выбранной даты",
   },
   en: {
     log: "➕ Add",
@@ -74,6 +76,8 @@ const translations = {
     notAchieved: "❌ Not yet",
     calorieBalance: "Calorie balance",
     save: "💾 Save",
+    newStart: "🆕 New start",
+    newStartHint: "Does not delete data, just counts from the selected date",
   },
 }
 
@@ -118,6 +122,22 @@ export default function Frame() {
   // фильтр дат
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
+
+  // новый старт
+  const [resetDate, setResetDate] = useState<string | null>(null)
+  useEffect(() => {
+    const rd = localStorage.getItem("resetDate")
+    if (rd) setResetDate(rd)
+  }, [])
+
+  function handleReset() {
+    if (!startDate) {
+      alert(lang === "ru" ? "⚠️ Сначала выбери дату начала" : "⚠️ Select a start date first")
+      return
+    }
+    localStorage.setItem("resetDate", startDate)
+    setResetDate(startDate)
+  }
 
   // цели
   const [goalWeight, setGoalWeight] = useState(80)
@@ -170,13 +190,9 @@ export default function Frame() {
       const [user] = await provider.request({ method: "eth_accounts" })
       if (!user) return
 
-      console.log("👤 user:", user)
-
       setLoading(true)
 
       const datesBigInt = await safeGetDates(user as `0x${string}`)
-      console.log("📅 datesBigInt:", datesBigInt)
-
       const dates = datesBigInt.map(Number)
       const fetched: Entry[] = []
 
@@ -200,15 +216,10 @@ export default function Frame() {
             }
             fetched.push(parsed)
           }
-        } catch (err) {
-          console.error(`❌ fetchEntry(${d}) error:`, err)
-        }
+        } catch {}
       }
 
-      console.log("✅ fetched entries:", fetched)
       setEntries(fetched.sort((a, b) => b.date - a.date))
-    } catch (err) {
-      console.error("fetchEntries error:", err)
     } finally {
       setLoading(false)
     }
@@ -234,12 +245,10 @@ export default function Frame() {
     })
 
     const [from] = await provider.request({ method: "eth_accounts" })
-    const txHash = await provider.request({
+    await provider.request({
       method: "eth_sendTransaction",
       params: [{ from, to: CONTRACT_ADDRESS, data, value: "0x0" }],
     })
-
-    console.log("✅ logEntry txHash:", txHash)
 
     fetchEntries()
   }
@@ -270,32 +279,34 @@ export default function Frame() {
   }))
 
   function getStats() {
-    if (entries.length === 0) return null
+    const filtered = filteredEntries
+    if (filtered.length === 0) return null
     const avgWeight =
-      entries.reduce((s, e) => s + e.weightGrams, 0) / entries.length / 1000
-    const avgIn = entries.reduce((s, e) => s + e.caloriesIn, 0) / entries.length
+      filtered.reduce((s, e) => s + e.weightGrams, 0) / filtered.length / 1000
+    const avgIn = filtered.reduce((s, e) => s + e.caloriesIn, 0) / filtered.length
     const avgOut =
-      entries.reduce((s, e) => s + e.caloriesOut, 0) / entries.length
-    const maxSteps = Math.max(...entries.map((e) => e.steps))
-    const minWeight = Math.min(...entries.map((e) => e.weightGrams)) / 1000
+      filtered.reduce((s, e) => s + e.caloriesOut, 0) / filtered.length
+    const maxSteps = Math.max(...filtered.map((e) => e.steps))
+    const minWeight = Math.min(...filtered.map((e) => e.weightGrams)) / 1000
     return { avgWeight, avgIn, avgOut, maxSteps, minWeight }
   }
+
+  const filteredEntries = entries.filter((e) => {
+    if (resetDate && e.date < Number(resetDate.replace(/-/g, ""))) return false
+    if (startDate && e.date < Number(startDate.replace(/-/g, ""))) return false
+    if (endDate && e.date > Number(endDate.replace(/-/g, ""))) return false
+    return true
+  })
 
   const stats = getStats()
 
   // 🎯 Достижения
   const achievements = {
-    weight: entries.length > 0 && (entries[0].weightGrams / 1000) <= goalWeight,
-    steps: entries.some((e) => e.steps >= goalSteps),
-    recordSteps: entries.length > 0 ? Math.max(...entries.map((e) => e.steps)) : 0,
-    minWeight: entries.length > 0 ? Math.min(...entries.map((e) => e.weightGrams)) / 1000 : null,
+    weight: filteredEntries.length > 0 && (filteredEntries[0].weightGrams / 1000) <= goalWeight,
+    steps: filteredEntries.some((e) => e.steps >= goalSteps),
+    recordSteps: filteredEntries.length > 0 ? Math.max(...filteredEntries.map((e) => e.steps)) : 0,
+    minWeight: filteredEntries.length > 0 ? Math.min(...filteredEntries.map((e) => e.weightGrams)) / 1000 : null,
   }
-
-  const filteredEntries = entries.filter((e) => {
-    if (startDate && e.date < Number(startDate.replace(/-/g, ""))) return false
-    if (endDate && e.date > Number(endDate.replace(/-/g, ""))) return false
-    return true
-  })
 
   return (
     <>
@@ -430,6 +441,17 @@ export default function Frame() {
                   className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition w-full sm:w-auto"
                 >
                   {t.export}
+                </button>
+
+                {/* 🆕 Новый старт */}
+                <button
+                  onClick={handleReset}
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition w-full sm:w-auto text-sm leading-tight"
+                >
+                  {t.newStart}
+                  <div className="text-xs font-normal text-white opacity-80">
+                    {t.newStartHint}
+                  </div>
                 </button>
               </div>
             </div>
