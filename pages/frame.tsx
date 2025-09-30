@@ -329,40 +329,56 @@ export default function Frame() {
 
         {/* Цели */}
         {view === "goals" && (
-          <div className="bg-white p-6 rounded-lg shadow space-y-3 text-center">
+          <div className="bg-white p-6 rounded-lg shadow space-y-4 text-center">
             <h2 className="text-lg font-bold text-emerald-700">{t.goalsTitle}</h2>
-            <div className="flex flex-col gap-2 items-center">
+
+            <div className="space-y-3">
+              {/* цель по весу */}
               <input
                 type="number"
                 value={goalWeight}
                 onChange={(e) => setGoalWeight(Number(e.target.value))}
                 className="border p-2 rounded text-gray-800 w-40 text-center"
               />
-              <p>
+              <p className="text-gray-800">
                 {t.goalWeight} ≤ {goalWeight}{t.weightUnit}:{" "}
-                {achievements.weight ? t.achieved : t.notAchieved}
+                {achievements.weight ? (
+                  <span className="text-green-600 font-semibold">{t.achieved}</span>
+                ) : (
+                  <span className="text-red-600 font-semibold">{t.notAchieved}</span>
+                )}
               </p>
+
+              {/* цель по шагам */}
               <input
                 type="number"
                 value={goalSteps}
                 onChange={(e) => setGoalSteps(Number(e.target.value))}
                 className="border p-2 rounded text-gray-800 w-40 text-center"
               />
-              <p>
+              <p className="text-gray-800">
                 {t.goalSteps} ≥ {goalSteps}:{" "}
-                {achievements.steps ? t.achieved : t.notAchieved}
+                {achievements.steps ? (
+                  <span className="text-green-600 font-semibold">{t.achieved}</span>
+                ) : (
+                  <span className="text-red-600 font-semibold">{t.notAchieved}</span>
+                )}
               </p>
+
               <button
                 onClick={saveGoals}
-                className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
               >
                 {t.save}
               </button>
             </div>
-            <p>🏆 {t.maxSteps}: {achievements.recordSteps}</p>
-            {achievements.minWeight && (
-              <p>⚖️ {t.minWeight}: {achievements.minWeight.toFixed(1)} {t.weightUnit}</p>
-            )}
+
+            <div className="pt-4 space-y-1 text-gray-800">
+              <p>🏆 {t.maxSteps}: {achievements.recordSteps}</p>
+              {achievements.minWeight && (
+                <p>⚖️ {t.minWeight}: {achievements.minWeight.toFixed(1)} {t.weightUnit}</p>
+              )}
+            </div>
           </div>
         )}
       </main>
