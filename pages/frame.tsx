@@ -1,15 +1,20 @@
 // pages/frame.tsx
 import Head from "next/head"
-import { useEffect, useState, useRef } from "react"
-import { encodeFunctionData, decodeFunctionResult } from "viem"
+import { useEffect, useRef, useState } from "react"
+import { encodeFunctionData } from "viem"
 import { sdk } from "@farcaster/miniapp-sdk"
 import abi from "../abi/FitnessDiary.json"
-import { publicClient } from "../lib/viem" // Alchemy client
+import { publicClient } from "../lib/viem"
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts"
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`
-
-// тип для auto-refresh setInterval
-type IntervalId = ReturnType<typeof setInterval>
 
 type Entry = {
   date: number
@@ -23,6 +28,8 @@ type Entry = {
 export default function Frame() {
   const [status, setStatus] = useState("")
   const [entries, setEntries] = useState<Entry[]>([])
+  const [loading, setLoading] = useState(false)
+  const [view, setView] = useState<"log" | "entries" | "chart">("log")
 
   // форма
   const [date, setDate] = useState("")
@@ -31,10 +38,9 @@ export default function Frame() {
   const [calOut, setCalOut] = useState("")
   const [steps, setSteps] = useState("")
 
-  // ref для интервала
-  const pollRef = useRef<IntervalId | null>(null)
+  const pollRef = useRef<number | null>(null)
 
-  // Miniapp ready → убирает splash
+  // убираем splash
   useEffect(() => {
     ;(async () => {
       try {
@@ -48,6 +54,75 @@ export default function Frame() {
 
   const provider = sdk.wallet.ethProvider
 
+  // безопасный вызов getDates
+  async function safeGetDates(user: `0x${string}`): Promise<bigint[]> {
+    let count = 20n
+    while (count > 0n) {
+      try {
+        const dates = (await publicClient.readContract({
+          abi,
+          address: CONTRACT_ADDRESS,
+          functionName: "getDates",
+          args: [user, 0n, count],
+        })) as bigint[]
+        return dates
+      } catch (err: any) {
+        if (err.message?.includes("Out of bounds")) {
+          count -= 1n
+        } else {
+          console.error("safeGetDates error:", err)
+          throw err
+        }
+      }
+    }
+    return []
+  }
+
+  async function fetchEntries() {
+    try {
+      if (!provider?.request) return
+      const [user] = await provider.request({ method: "eth_accounts" })
+      if (!user) return
+
+      setLoading(true)
+
+      const datesBigInt = await safeGetDates(user as `0x${string}`)
+      const dates = datesBigInt.map(Number)
+      const recent = dates.slice(-3)
+
+      const fetched: Entry[] = []
+      for (let d of recent) {
+        try {
+          const entry = (await publicClient.readContract({
+            abi,
+            address: CONTRACT_ADDRESS,
+            functionName: "getEntry",
+            args: [user as `0x${string}`, BigInt(d)],
+          })) as Entry
+
+          if (entry.exists) {
+            fetched.push({
+              ...entry,
+              date: Number(entry.date),
+              weightGrams: Number(entry.weightGrams),
+              caloriesIn: Number(entry.caloriesIn),
+              caloriesOut: Number(entry.caloriesOut),
+              steps: Number(entry.steps),
+            })
+          }
+        } catch (err) {
+          console.error(`fetchEntry(${d}) error:`, err)
+        }
+      }
+
+      setEntries(fetched.reverse())
+    } catch (err) {
+      console.error("fetchEntries error", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   async function logEntry() {
     try {
       if (!date || !weight || !calIn || !calOut || !steps) {
@@ -58,7 +133,7 @@ export default function Frame() {
 
       setStatus("⏳ Отправка транзакции...")
 
-      const ymd = Number(date)
+      const ymd = Number(date.replace(/-/g, "")) // yyyy-mm-dd → yyyymmdd
       const w = Math.round(Number(weight) * 1000)
       const ci = Number(calIn)
       const co = Number(calOut)
@@ -86,61 +161,19 @@ export default function Frame() {
       setStatus(`✅ Успешно! tx: ${txHash}`)
       fetchEntries()
     } catch (err: any) {
+      console.error("logEntry error:", err)
       setStatus(`❌ Ошибка: ${err.message || String(err)}`)
     }
   }
 
-  async function fetchEntries() {
-    try {
-      const [from] = await provider.request({ method: "eth_accounts" })
-
-      // читаем последние 10 дат через Alchemy
-      const dates = (await publicClient.readContract({
-        abi,
-        address: CONTRACT_ADDRESS,
-        functionName: "getDates",
-        args: [from as `0x${string}`, 0n, 10n],
-      })) as bigint[]
-
-      const recent = dates.slice(-3).map(Number)
-
-      const fetched: Entry[] = []
-      for (let d of recent) {
-        const entry = (await publicClient.readContract({
-          abi,
-          address: CONTRACT_ADDRESS,
-          functionName: "getEntry",
-          args: [from as `0x${string}`, BigInt(d)],
-        })) as Entry
-
-        if (entry.exists) {
-          fetched.push({
-            ...entry,
-            date: Number(entry.date),
-            weightGrams: Number(entry.weightGrams),
-            caloriesIn: Number(entry.caloriesIn),
-            caloriesOut: Number(entry.caloriesOut),
-            steps: Number(entry.steps),
-          })
-        }
-      }
-
-      setEntries(fetched.reverse())
-    } catch (err) {
-      console.error("fetchEntries error", err)
-    }
-  }
-
-  // автообновление каждые 5 секунд
+  // автообновление раз в 30 секунд
   useEffect(() => {
     fetchEntries()
-    if (pollRef.current !== null) clearInterval(pollRef.current)
-    pollRef.current = setInterval(fetchEntries, 5000)
-
+    if (pollRef.current !== null) window.clearInterval(pollRef.current)
+    pollRef.current = window.setInterval(fetchEntries, 30000)
     return () => {
-      if (pollRef.current !== null) clearInterval(pollRef.current)
+      if (pollRef.current !== null) window.clearInterval(pollRef.current)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function formatDate(num: number) {
@@ -148,12 +181,20 @@ export default function Frame() {
     return `${str.slice(6, 8)}/${str.slice(4, 6)}/${str.slice(0, 4)}`
   }
 
+  const chartData = entries.map((e) => ({
+    date: formatDate(e.date),
+    weight: e.weightGrams / 1000,
+  }))
+
   return (
     <>
       <Head>
-        <title>Fitness Diary Frame</title>
+        <title>Fitness Diary — Mini</title>
         <meta property="og:title" content="Fitness Diary — Mini" />
-        <meta property="og:description" content="Добавь запись прямо из Warpcast" />
+        <meta
+          property="og:description"
+          content="Добавь запись прямо из Warpcast"
+        />
         <meta
           property="og:image"
           content="https://fitness-diary-web.vercel.app/og.png"
@@ -166,67 +207,128 @@ export default function Frame() {
         </h1>
         <p className="text-gray-600">{status || "Готово"}</p>
 
-        {/* форма */}
-        <div className="space-y-2 border p-4 rounded-lg shadow">
-          <input
-            className="w-full border p-2 rounded text-gray-900"
-            placeholder="Дата (YYYYMMDD)"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-          <input
-            className="w-full border p-2 rounded text-gray-900"
-            placeholder="Вес (кг)"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-          />
-          <input
-            className="w-full border p-2 rounded text-gray-900"
-            placeholder="Калории In"
-            value={calIn}
-            onChange={(e) => setCalIn(e.target.value)}
-          />
-          <input
-            className="w-full border p-2 rounded text-gray-900"
-            placeholder="Калории Out"
-            value={calOut}
-            onChange={(e) => setCalOut(e.target.value)}
-          />
-          <input
-            className="w-full border p-2 rounded text-gray-900"
-            placeholder="Шаги"
-            value={steps}
-            onChange={(e) => setSteps(e.target.value)}
-          />
+        {/* меню */}
+        <nav className="flex gap-4 text-emerald-700 font-medium">
           <button
-            onClick={logEntry}
-            className="bg-emerald-500 text-white px-4 py-2 rounded hover:bg-emerald-600 w-full"
+            className={view === "entries" ? "underline" : ""}
+            onClick={() => setView("entries")}
           >
-            ➕ Добавить запись
+            📖 Записи
           </button>
-        </div>
+          <button
+            className={view === "log" ? "underline" : ""}
+            onClick={() => setView("log")}
+          >
+            ➕ Добавить
+          </button>
+          <button
+            className={view === "chart" ? "underline" : ""}
+            onClick={() => setView("chart")}
+          >
+            📊 График
+          </button>
+        </nav>
 
-        {/* последние записи */}
-        <div className="space-y-3">
-          <h2 className="font-semibold text-lg text-emerald-700">
-            Последние записи
-          </h2>
-          {entries.length === 0 && (
-            <p className="text-gray-500">Записей пока нет</p>
-          )}
-          {entries.map((e, i) => (
-            <div key={i} className="border rounded-lg p-3 shadow bg-white">
-              <p className="text-sm text-gray-600">{formatDate(e.date)}</p>
-              <p className="font-semibold text-emerald-700">
-                Вес: {(e.weightGrams / 1000).toFixed(1)} кг
-              </p>
-              <p className="text-sm text-gray-800">
-                Калории: {e.caloriesIn} / {e.caloriesOut}
-              </p>
-              <p className="text-sm text-gray-800">Шаги: {e.steps}</p>
+        {/* Добавить запись */}
+        {view === "log" && (
+          <div className="space-y-2 border p-4 rounded-lg shadow">
+            <input
+              type="date"
+              className="w-full border p-2 rounded text-gray-900"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+            <input
+              className="w-full border p-2 rounded text-gray-900"
+              placeholder="Вес (кг)"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+            />
+            <input
+              className="w-full border p-2 rounded text-gray-900"
+              placeholder="Калории In"
+              value={calIn}
+              onChange={(e) => setCalIn(e.target.value)}
+            />
+            <input
+              className="w-full border p-2 rounded text-gray-900"
+              placeholder="Калории Out"
+              value={calOut}
+              onChange={(e) => setCalOut(e.target.value)}
+            />
+            <input
+              className="w-full border p-2 rounded text-gray-900"
+              placeholder="Шаги"
+              value={steps}
+              onChange={(e) => setSteps(e.target.value)}
+            />
+            <button
+              onClick={logEntry}
+              className="bg-emerald-500 text-white px-4 py-2 rounded hover:bg-emerald-600 w-full"
+            >
+              ➕ Добавить запись
+            </button>
+          </div>
+        )}
+
+        {/* Последние записи */}
+        {view === "entries" && (
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <h2 className="font-semibold text-lg text-emerald-700">
+                Последние записи
+              </h2>
+              <button
+                onClick={fetchEntries}
+                className="text-sm text-emerald-600 hover:underline"
+              >
+                🔄 Обновить
+              </button>
             </div>
-          ))}
-        </div>
+            {loading && <p className="text-gray-500">Загрузка...</p>}
+            {!loading && entries.length === 0 && (
+              <p className="text-gray-500">Записей пока нет</p>
+            )}
+            {entries.map((e, i) => (
+              <div
+                key={i}
+                className="border rounded-lg p-3 shadow bg-white"
+              >
+                <p className="text-sm text-gray-600">{formatDate(e.date)}</p>
+                <p className="font-semibold text-emerald-700">
+                  Вес: {(e.weightGrams / 1000).toFixed(1)} кг
+                </p>
+                <p className="text-sm text-gray-800">
+                  Калории: {e.caloriesIn} / {e.caloriesOut}
+                </p>
+                <p className="text-sm text-gray-800">Шаги: {e.steps}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* График */}
+        {view === "chart" && (
+          <div className="w-full h-64">
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="weight"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-gray-500">Нет данных для графика</p>
+            )}
+          </div>
+        )}
       </main>
     </>
   )
