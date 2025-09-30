@@ -8,11 +8,12 @@ import { sdk } from "@farcaster/miniapp-sdk"
 import abi from "../abi/FitnessDiary.json"
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`
+const ALCHEMY_KEY = process.env.NEXT_PUBLIC_ALCHEMY_API_KEY!
 
-// Alchemy client для чтения
+// публичный клиент для чтения
 const publicClient = createPublicClient({
   chain: base,
-  transport: http(`https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`),
+  transport: http(`https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}`),
 })
 
 type Entry = {
@@ -35,12 +36,11 @@ export default function Frame() {
   const [calOut, setCalOut] = useState("")
   const [steps, setSteps] = useState("")
 
-  // Miniapp ready → убирает splash
+  // Убираем splash
   useEffect(() => {
     ;(async () => {
       try {
         await sdk.actions.ready()
-        console.log("✅ sdk.actions.ready() called")
       } catch (e) {
         console.warn("⚠️ sdk.actions.ready() failed", e)
       }
@@ -93,9 +93,9 @@ export default function Frame() {
 
   async function fetchEntries() {
     try {
+      // берем аккаунт из Warpcast
       const [from] = await provider.request({ method: "eth_accounts" })
 
-      // читаем последние 10 дат через Alchemy
       const dates = (await publicClient.readContract({
         abi,
         address: CONTRACT_ADDRESS,
@@ -104,8 +104,8 @@ export default function Frame() {
       })) as bigint[]
 
       const recent = dates.slice(-3).map(Number)
-      const fetched: Entry[] = []
 
+      const fetched: Entry[] = []
       for (let d of recent) {
         const entry = (await publicClient.readContract({
           abi,
@@ -125,18 +125,17 @@ export default function Frame() {
           })
         }
       }
-
       setEntries(fetched.reverse())
     } catch (err) {
-      console.error(err)
+      console.error("fetchEntries error:", err)
     }
   }
 
-  // Загружаем записи при старте + автообновление каждые 5 сек
+  // автообновление
   useEffect(() => {
     fetchEntries()
-    const interval = setInterval(fetchEntries, 5000)
-    return () => clearInterval(interval)
+    const i = setInterval(fetchEntries, 5000)
+    return () => clearInterval(i)
   }, [])
 
   function formatDate(num: number) {
@@ -148,43 +147,47 @@ export default function Frame() {
     <>
       <Head>
         <title>Fitness Diary Frame</title>
-        <meta property="og:title" content="Fitness Diary — Mini" />
-        <meta property="og:description" content="Добавь запись прямо из Warpcast" />
-        <meta property="og:image" content="https://fitness-diary-web.vercel.app/og.png" />
       </Head>
 
       <main className="p-6 space-y-6">
+        {/* меню */}
+        <nav className="flex space-x-4 text-emerald-600 font-semibold">
+          <button onClick={fetchEntries}>📖 Записи</button>
+          <button>➕ Добавить</button>
+          <button>📊 График</button>
+        </nav>
+
         <h1 className="text-2xl font-bold text-emerald-700">Fitness Diary — Mini</h1>
         <p className="text-gray-600">{status || "Готово"}</p>
 
         {/* форма */}
-        <div className="space-y-2 border p-4 rounded-lg shadow">
+        <div className="space-y-2 border p-4 rounded-lg shadow bg-white">
           <input
-            className="w-full border p-2 rounded"
+            className="w-full border p-2 rounded text-black"
             placeholder="Дата (YYYYMMDD)"
             value={date}
             onChange={e => setDate(e.target.value)}
           />
           <input
-            className="w-full border p-2 rounded"
+            className="w-full border p-2 rounded text-black"
             placeholder="Вес (кг)"
             value={weight}
             onChange={e => setWeight(e.target.value)}
           />
           <input
-            className="w-full border p-2 rounded"
+            className="w-full border p-2 rounded text-black"
             placeholder="Калории In"
             value={calIn}
             onChange={e => setCalIn(e.target.value)}
           />
           <input
-            className="w-full border p-2 rounded"
+            className="w-full border p-2 rounded text-black"
             placeholder="Калории Out"
             value={calOut}
             onChange={e => setCalOut(e.target.value)}
           />
           <input
-            className="w-full border p-2 rounded"
+            className="w-full border p-2 rounded text-black"
             placeholder="Шаги"
             value={steps}
             onChange={e => setSteps(e.target.value)}
