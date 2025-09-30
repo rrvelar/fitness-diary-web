@@ -452,4 +452,70 @@ export default function Frame() {
                   <Line type="monotone" dataKey="weight" stroke="#10b981" strokeWidth={2} name={`${t.weight} (${t.weightUnit})`} />
                   <Line type="monotone" dataKey="calIn" stroke="#3b82f6" strokeWidth={2} name={`${t.calories} In`} />
                   <Line type="monotone" dataKey="calOut" stroke="#ef4444" strokeWidth={2} name={`${t.calories} Out`} />
-                  <Line type="monotone" dataKey="balance" stroke="#f
+                  <Line type="monotone" dataKey="balance" stroke="#f59e0b" strokeWidth={2} name={t.calorieBalance} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-gray-500">{lang === "ru" ? "Нет данных" : "No data"}</p>
+            )}
+          </div>
+        )}
+
+        {/* Статистика */}
+        {view === "stats" && stats && (
+          <div className="bg-white p-6 rounded-lg shadow space-y-2 text-center">
+            <h2 className="text-lg font-bold text-emerald-700">{t.statsTitle}</h2>
+            <p className="text-gray-800">
+              {t.avgWeight}: {stats.avgWeight.toFixed(1)} {t.weightUnit}
+            </p>
+            <p className="text-gray-800">{t.avgIn}: {stats.avgIn.toFixed(0)}</p>
+            <p className="text-gray-800">{t.avgOut}: {stats.avgOut.toFixed(0)}</p>
+            <p className="text-gray-800">{t.maxSteps}: {stats.maxSteps}</p>
+            <p className="text-gray-800">
+              {t.minWeight}: {stats.minWeight.toFixed(1)} {t.weightUnit}
+            </p>
+          </div>
+        )}
+
+        {/* Цели */}
+        {view === "goals" && (
+          <div className="bg-white p-6 rounded-lg shadow space-y-3 text-center">
+            <h2 className="text-lg font-bold text-emerald-700">{t.goalsTitle}</h2>
+            <div className="flex flex-col gap-2 items-center">
+              <input
+                type="number"
+                value={goalWeight}
+                onChange={(e) => setGoalWeight(Number(e.target.value))}
+                className="border p-2 rounded text-gray-800 w-40 text-center"
+              />
+              <p>
+                {t.goalWeight} ≤ {goalWeight}{t.weightUnit}:{" "}
+                {achievements.weight ? t.achieved : t.notAchieved}
+              </p>
+              <input
+                type="number"
+                value={goalSteps}
+                onChange={(e) => setGoalSteps(Number(e.target.value))}
+                className="border p-2 rounded text-gray-800 w-40 text-center"
+              />
+              <p>
+                {t.goalSteps} ≥ {goalSteps}:{" "}
+                {achievements.steps ? t.achieved : t.notAchieved}
+              </p>
+              <button
+                onClick={saveGoals}
+                className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+              >
+                {t.save}
+              </button>
+            </div>
+            <p>🏆 {t.maxSteps}: {achievements.recordSteps}</p>
+            {achievements.minWeight && (
+              <p>⚖️ {t.minWeight}: {achievements.minWeight.toFixed(1)} {t.weightUnit}</p>
+            )}
+          </div>
+        )}
+      </main>
+    </>
+  )
+}
