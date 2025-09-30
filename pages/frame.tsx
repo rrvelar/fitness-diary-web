@@ -88,10 +88,9 @@ export default function Frame() {
 
       const datesBigInt = await safeGetDates(user as `0x${string}`)
       const dates = datesBigInt.map(Number)
-      const recent = dates.slice(-3)
 
       const fetched: Entry[] = []
-      for (let d of recent) {
+      for (let d of dates) {
         try {
           const entry = (await publicClient.readContract({
             abi,
@@ -115,7 +114,8 @@ export default function Frame() {
         }
       }
 
-      setEntries(fetched.reverse())
+      // сортировка новые → старые
+      setEntries(fetched.sort((a, b) => b.date - a.date))
     } catch (err) {
       console.error("fetchEntries error", err)
     } finally {
@@ -201,28 +201,40 @@ export default function Frame() {
         />
       </Head>
 
-      <main className="p-6 space-y-6">
-        <h1 className="text-2xl font-bold text-emerald-700">
+      <main className="min-h-screen p-6 space-y-6 bg-gradient-to-b from-gray-50 to-gray-100">
+        <h1 className="text-3xl font-extrabold text-emerald-700 text-center">
           Fitness Diary — Mini
         </h1>
-        <p className="text-gray-600">{status || "Готово"}</p>
+        <p className="text-center text-gray-600">{status || "Готово"}</p>
 
         {/* меню */}
-        <nav className="flex gap-4 text-emerald-700 font-medium">
+        <nav className="flex justify-center gap-4">
           <button
-            className={view === "entries" ? "underline" : ""}
+            className={`px-4 py-2 rounded-lg transition ${
+              view === "entries"
+                ? "bg-emerald-600 text-white"
+                : "bg-white text-emerald-700 border border-emerald-600 hover:bg-emerald-50"
+            }`}
             onClick={() => setView("entries")}
           >
             📖 Записи
           </button>
           <button
-            className={view === "log" ? "underline" : ""}
+            className={`px-4 py-2 rounded-lg transition ${
+              view === "log"
+                ? "bg-emerald-600 text-white"
+                : "bg-white text-emerald-700 border border-emerald-600 hover:bg-emerald-50"
+            }`}
             onClick={() => setView("log")}
           >
             ➕ Добавить
           </button>
           <button
-            className={view === "chart" ? "underline" : ""}
+            className={`px-4 py-2 rounded-lg transition ${
+              view === "chart"
+                ? "bg-emerald-600 text-white"
+                : "bg-white text-emerald-700 border border-emerald-600 hover:bg-emerald-50"
+            }`}
             onClick={() => setView("chart")}
           >
             📊 График
@@ -231,7 +243,7 @@ export default function Frame() {
 
         {/* Добавить запись */}
         {view === "log" && (
-          <div className="space-y-2 border p-4 rounded-lg shadow">
+          <div className="space-y-2 border p-4 rounded-lg shadow bg-white">
             <input
               type="date"
               className="w-full border p-2 rounded text-gray-900"
@@ -264,7 +276,7 @@ export default function Frame() {
             />
             <button
               onClick={logEntry}
-              className="bg-emerald-500 text-white px-4 py-2 rounded hover:bg-emerald-600 w-full"
+              className="bg-emerald-500 text-white px-4 py-2 rounded hover:bg-emerald-600 w-full transition"
             >
               ➕ Добавить запись
             </button>
@@ -280,7 +292,7 @@ export default function Frame() {
               </h2>
               <button
                 onClick={fetchEntries}
-                className="text-sm text-emerald-600 hover:underline"
+                className="flex items-center gap-1 text-sm text-emerald-600 border border-emerald-600 px-2 py-1 rounded hover:bg-emerald-50 transition"
               >
                 🔄 Обновить
               </button>
@@ -292,16 +304,18 @@ export default function Frame() {
             {entries.map((e, i) => (
               <div
                 key={i}
-                className="border rounded-lg p-3 shadow bg-white"
+                className="border rounded-xl p-4 shadow-md bg-white hover:shadow-lg transition"
               >
-                <p className="text-sm text-gray-600">{formatDate(e.date)}</p>
-                <p className="font-semibold text-emerald-700">
+                <p className="text-sm text-gray-500">{formatDate(e.date)}</p>
+                <p className="font-semibold text-emerald-700 text-lg">
                   Вес: {(e.weightGrams / 1000).toFixed(1)} кг
                 </p>
-                <p className="text-sm text-gray-800">
-                  Калории: {e.caloriesIn} / {e.caloriesOut}
+                <p className="text-sm text-gray-700">
+                  Калории:{" "}
+                  <span className="font-medium">{e.caloriesIn}</span> /{" "}
+                  <span className="font-medium">{e.caloriesOut}</span>
                 </p>
-                <p className="text-sm text-gray-800">Шаги: {e.steps}</p>
+                <p className="text-sm text-gray-700">Шаги: {e.steps}</p>
               </div>
             ))}
           </div>
