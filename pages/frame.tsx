@@ -327,61 +327,129 @@ export default function Frame() {
           ))}
         </nav>
 
-        {/* Цели */}
-        {view === "goals" && (
-          <div className="bg-white p-6 rounded-lg shadow space-y-4 text-center">
-            <h2 className="text-lg font-bold text-emerald-700">{t.goalsTitle}</h2>
-
-            <div className="space-y-3">
-              {/* цель по весу */}
-              <input
-                type="number"
-                value={goalWeight}
-                onChange={(e) => setGoalWeight(Number(e.target.value))}
-                className="border p-2 rounded text-gray-800 w-40 text-center"
-              />
-              <p className="text-gray-800">
-                {t.goalWeight} ≤ {goalWeight}{t.weightUnit}:{" "}
-                {achievements.weight ? (
-                  <span className="text-green-600 font-semibold">{t.achieved}</span>
-                ) : (
-                  <span className="text-red-600 font-semibold">{t.notAchieved}</span>
-                )}
-              </p>
-
-              {/* цель по шагам */}
-              <input
-                type="number"
-                value={goalSteps}
-                onChange={(e) => setGoalSteps(Number(e.target.value))}
-                className="border p-2 rounded text-gray-800 w-40 text-center"
-              />
-              <p className="text-gray-800">
-                {t.goalSteps} ≥ {goalSteps}:{" "}
-                {achievements.steps ? (
-                  <span className="text-green-600 font-semibold">{t.achieved}</span>
-                ) : (
-                  <span className="text-red-600 font-semibold">{t.notAchieved}</span>
-                )}
-              </p>
-
-              <button
-                onClick={saveGoals}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-              >
-                {t.save}
-              </button>
-            </div>
-
-            <div className="pt-4 space-y-1 text-gray-800">
-              <p>🏆 {t.maxSteps}: {achievements.recordSteps}</p>
-              {achievements.minWeight && (
-                <p>⚖️ {t.minWeight}: {achievements.minWeight.toFixed(1)} {t.weightUnit}</p>
-              )}
-            </div>
+        {/* Добавить запись */}
+        {view === "log" && (
+          <div className="space-y-2 border p-4 rounded-lg shadow bg-white">
+            <input
+              type="date"
+              className="w-full border p-2 rounded text-gray-900"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+            <input
+              className="w-full border p-2 rounded text-gray-900"
+              placeholder={`${t.weight} (${t.weightUnit})`}
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+            />
+            <input
+              className="w-full border p-2 rounded text-gray-900"
+              placeholder={`${t.calories} In`}
+              value={calIn}
+              onChange={(e) => setCalIn(e.target.value)}
+            />
+            <input
+              className="w-full border p-2 rounded text-gray-900"
+              placeholder={`${t.calories} Out`}
+              value={calOut}
+              onChange={(e) => setCalOut(e.target.value)}
+            />
+            <input
+              className="w-full border p-2 rounded text-gray-900"
+              placeholder={t.steps}
+              value={steps}
+              onChange={(e) => setSteps(e.target.value)}
+            />
+            <button
+              onClick={logEntry}
+              className="bg-emerald-500 text-white px-4 py-2 rounded hover:bg-emerald-600 w-full transition"
+            >
+              {t.log}
+            </button>
           </div>
         )}
-      </main>
-    </>
-  )
-}
+
+        {/* Последние записи */}
+        {view === "entries" && (
+          <div className="space-y-3">
+            <div className="flex justify-between items-center flex-wrap gap-2">
+              <h2 className="font-semibold text-lg text-emerald-700">{t.lastEntries}</h2>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="border p-1 rounded text-gray-700"
+                />
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="border p-1 rounded text-gray-700"
+                />
+                <button
+                  onClick={fetchEntries}
+                  className="bg-emerald-500 text-white px-3 py-1 rounded hover:bg-emerald-600 transition"
+                >
+                  {t.update}
+                </button>
+                <button
+                  onClick={() => {
+                    if (entries.length === 0) return
+                    const header = `${t.weight},${t.calories} In,${t.calories} Out,${t.steps}\n`
+                    const rows = entries
+                      .map(
+                        (e) =>
+                          `${formatDate(e.date)},${(e.weightGrams / 1000).toFixed(1)},${e.caloriesIn},${e.caloriesOut},${e.steps}`
+                      )
+                      .join("\n")
+                    const blob = new Blob([header + rows], { type: "text/csv" })
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement("a")
+                    a.href = url
+                    a.download = "fitness-diary.csv"
+                    a.click()
+                  }}
+                  className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+                >
+                  {t.export}
+                </button>
+              </div>
+            </div>
+            {loading && <p className="text-gray-500">Loading...</p>}
+            {!loading && filteredEntries.length === 0 && (
+              <p className="text-gray-500">{t.noEntries}</p>
+            )}
+            {filteredEntries.map((e, i) => (
+              <div
+                key={i}
+                className="border rounded-xl p-4 shadow-md bg-white hover:shadow-lg transition"
+              >
+                <p className="text-sm text-gray-500">{formatDate(e.date)}</p>
+                <p className="font-semibold text-emerald-700 text-lg">
+                  {t.weight}: {(e.weightGrams / 1000).toFixed(1)} {t.weightUnit}
+                </p>
+                <p className="text-sm text-gray-800">
+                  {t.calories}: <span className="font-medium">{e.caloriesIn}</span> /{" "}
+                  <span className="font-medium">{e.caloriesOut}</span>
+                </p>
+                <p className="text-sm text-gray-800">{t.steps}: {e.steps}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* График */}
+        {view === "chart" && (
+          <div className="w-full h-72 bg-white p-4 rounded-lg shadow">
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="weight" stroke="#10b981" strokeWidth={2} name={`${t.weight} (${t.weightUnit})`} />
+                  <Line type="monotone" dataKey="calIn" stroke="#3b82f6" strokeWidth={2} name={`${t.calories} In`} />
+                  <Line type="monotone" dataKey="calOut" stroke="#ef4444" strokeWidth={2} name={`${t.calories} Out`} />
+                  <Line type="monotone" dataKey="balance" stroke="#f
