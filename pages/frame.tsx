@@ -76,7 +76,19 @@ export default function Frame() {
         ],
       })
 
-      setStatus(`✅ Успешно! tx: ${txHash}`)
+      setStatus(`✅ Транзакция отправлена! tx: ${txHash}, ждём подтверждения...`)
+
+      // 🕑 Ждём подтверждения
+      let receipt = null
+      while (!receipt) {
+        await new Promise(r => setTimeout(r, 5000)) // каждые 5 сек
+        receipt = await provider.request({
+          method: "eth_getTransactionReceipt",
+          params: [txHash],
+        })
+      }
+
+      setStatus(`🎉 Запись подтверждена в блоке ${receipt.blockNumber}`)
       fetchEntries()
     } catch (err: any) {
       setStatus(`❌ Ошибка: ${err.message || String(err)}`)
@@ -88,7 +100,7 @@ export default function Frame() {
       if (!provider?.request) return
       const [from] = await provider.request({ method: "eth_accounts" })
 
-      // читаем последние 3 даты
+      // читаем последние 10 дат
       const dataDates = encodeFunctionData({
         abi: abi as any,
         functionName: "getDates",
@@ -145,8 +157,11 @@ export default function Frame() {
     }
   }
 
+  // первый вызов + автообновление каждые 5 сек
   useEffect(() => {
     fetchEntries()
+    const interval = setInterval(fetchEntries, 5000)
+    return () => clearInterval(interval)
   }, [])
 
   function formatDate(num: number) {
