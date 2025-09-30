@@ -30,6 +30,7 @@ const translations = {
     export: "💾 Экспорт",
     noEntries: "Записей пока нет",
     weight: "Вес",
+    weightUnit: "кг",
     calories: "Калории",
     steps: "Шаги",
     statsTitle: "📊 Общая статистика",
@@ -50,6 +51,7 @@ const translations = {
     export: "💾 Export",
     noEntries: "No records yet",
     weight: "Weight",
+    weightUnit: "kg",
     calories: "Calories",
     steps: "Steps",
     statsTitle: "📊 Overall stats",
@@ -168,12 +170,12 @@ export default function Frame() {
   async function logEntry() {
     try {
       if (!date || !weight || !calIn || !calOut || !steps) {
-        alert("⚠️ Fill all fields")
+        alert(lang === "ru" ? "⚠️ Заполни все поля" : "⚠️ Fill all fields")
         return
       }
       if (!provider?.request) throw new Error("Wallet not available")
 
-      setStatus("⏳ Sending transaction...")
+      setStatus(lang === "ru" ? "⏳ Отправка транзакции..." : "⏳ Sending transaction...")
 
       const ymd = Number(date.replace(/-/g, ""))
       const w = Math.round(Number(weight) * 1000)
@@ -193,10 +195,10 @@ export default function Frame() {
         params: [{ from, to: CONTRACT_ADDRESS, data, value: "0x0" }],
       })
 
-      setStatus(`✅ Success! tx: ${txHash}`)
+      setStatus(lang === "ru" ? `✅ Успешно! tx: ${txHash}` : `✅ Success! tx: ${txHash}`)
       fetchEntries()
     } catch (err: any) {
-      setStatus(`❌ Error: ${err.message || String(err)}`)
+      setStatus(lang === "ru" ? `❌ Ошибка: ${err.message || String(err)}` : `❌ Error: ${err.message || String(err)}`)
     }
   }
 
@@ -243,9 +245,7 @@ export default function Frame() {
     const rows = entries
       .map(
         (e) =>
-          `${formatDate(e.date)},${(e.weightGrams / 1000).toFixed(1)},${
-            e.caloriesIn
-          },${e.caloriesOut},${e.steps}`
+          `${formatDate(e.date)},${(e.weightGrams / 1000).toFixed(1)},${e.caloriesIn},${e.caloriesOut},${e.steps}`
       )
       .join("\n")
     const blob = new Blob([header + rows], { type: "text/csv" })
@@ -316,7 +316,7 @@ export default function Frame() {
             />
             <input
               className="w-full border p-2 rounded text-gray-900"
-              placeholder={`${t.weight} (кг)`}
+              placeholder={`${t.weight} (${t.weightUnit})`}
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
             />
@@ -351,9 +351,7 @@ export default function Frame() {
         {view === "entries" && (
           <div className="space-y-3">
             <div className="flex justify-between items-center flex-wrap gap-2">
-              <h2 className="font-semibold text-lg text-emerald-700">
-                {t.lastEntries}
-              </h2>
+              <h2 className="font-semibold text-lg text-emerald-700">{t.lastEntries}</h2>
               <div className="flex gap-2">
                 <input
                   type="date"
@@ -392,13 +390,13 @@ export default function Frame() {
               >
                 <p className="text-sm text-gray-500">{formatDate(e.date)}</p>
                 <p className="font-semibold text-emerald-700 text-lg">
-                  {t.weight}: {(e.weightGrams / 1000).toFixed(1)} кг
+                  {t.weight}: {(e.weightGrams / 1000).toFixed(1)} {t.weightUnit}
                 </p>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-800">
                   {t.calories}: <span className="font-medium">{e.caloriesIn}</span> /{" "}
                   <span className="font-medium">{e.caloriesOut}</span>
                 </p>
-                <p className="text-sm text-gray-700">{t.steps}: {e.steps}</p>
+                <p className="text-sm text-gray-800">{t.steps}: {e.steps}</p>
               </div>
             ))}
           </div>
@@ -414,13 +412,13 @@ export default function Frame() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="weight" stroke="#10b981" strokeWidth={2} name={`${t.weight} (кг)`} />
+                  <Line type="monotone" dataKey="weight" stroke="#10b981" strokeWidth={2} name={`${t.weight} (${t.weightUnit})`} />
                   <Line type="monotone" dataKey="calIn" stroke="#3b82f6" strokeWidth={2} name={`${t.calories} In`} />
                   <Line type="monotone" dataKey="calOut" stroke="#ef4444" strokeWidth={2} name={`${t.calories} Out`} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-gray-500">Нет данных</p>
+              <p className="text-gray-500">{lang === "ru" ? "Нет данных" : "No data"}</p>
             )}
           </div>
         )}
@@ -429,11 +427,15 @@ export default function Frame() {
         {view === "stats" && stats && (
           <div className="bg-white p-6 rounded-lg shadow space-y-2 text-center">
             <h2 className="text-lg font-bold text-emerald-700">{t.statsTitle}</h2>
-            <p>{t.avgWeight}: {stats.avgWeight.toFixed(1)} кг</p>
-            <p>{t.avgIn}: {stats.avgIn.toFixed(0)}</p>
-            <p>{t.avgOut}: {stats.avgOut.toFixed(0)}</p>
-            <p>{t.maxSteps}: {stats.maxSteps}</p>
-            <p>{t.minWeight}: {stats.minWeight.toFixed(1)} кг</p>
+            <p className="text-gray-800">
+              {t.avgWeight}: {stats.avgWeight.toFixed(1)} {t.weightUnit}
+            </p>
+            <p className="text-gray-800">{t.avgIn}: {stats.avgIn.toFixed(0)}</p>
+            <p className="text-gray-800">{t.avgOut}: {stats.avgOut.toFixed(0)}</p>
+            <p className="text-gray-800">{t.maxSteps}: {stats.maxSteps}</p>
+            <p className="text-gray-800">
+              {t.minWeight}: {stats.minWeight.toFixed(1)} {t.weightUnit}
+            </p>
           </div>
         )}
       </main>
