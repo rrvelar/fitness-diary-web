@@ -12,6 +12,7 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts"
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`
@@ -29,7 +30,7 @@ export default function Frame() {
   const [status, setStatus] = useState("")
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(false)
-  const [view, setView] = useState<"log" | "entries" | "chart">("log")
+  const [view, setView] = useState<"log" | "entries" | "chart" | "stats">("log")
 
   // форма
   const [date, setDate] = useState("")
@@ -38,6 +39,10 @@ export default function Frame() {
   const [calOut, setCalOut] = useState("")
   const [steps, setSteps] = useState("")
 
+  // фильтр дат
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
+
   const pollRef = useRef<number | null>(null)
 
   // убираем splash
@@ -45,7 +50,6 @@ export default function Frame() {
     ;(async () => {
       try {
         await sdk.actions.ready()
-        console.log("✅ sdk.actions.ready() called")
       } catch (e) {
         console.warn("⚠️ sdk.actions.ready() failed", e)
       }
@@ -56,7 +60,7 @@ export default function Frame() {
 
   // безопасный вызов getDates
   async function safeGetDates(user: `0x${string}`): Promise<bigint[]> {
-    let count = 20n
+    let count = 50n
     while (count > 0n) {
       try {
         const dates = (await publicClient.readContract({
@@ -114,7 +118,6 @@ export default function Frame() {
         }
       }
 
-      // сортировка новые → старые
       setEntries(fetched.sort((a, b) => b.date - a.date))
     } catch (err) {
       console.error("fetchEntries error", err)
@@ -184,21 +187,57 @@ export default function Frame() {
   const chartData = entries.map((e) => ({
     date: formatDate(e.date),
     weight: e.weightGrams / 1000,
+    calIn: e.caloriesIn,
+    calOut: e.caloriesOut,
   }))
+
+  // 📊 статистика
+  function getStats() {
+    if (entries.length === 0) return null
+    const avgWeight =
+      entries.reduce((sum, e) => sum + e.weightGrams, 0) / entries.length / 1000
+    const avgIn =
+      entries.reduce((sum, e) => sum + e.caloriesIn, 0) / entries.length
+    const avgOut =
+      entries.reduce((sum, e) => sum + e.caloriesOut, 0) / entries.length
+    const maxSteps = Math.max(...entries.map((e) => e.steps))
+    const minWeight = Math.min(...entries.map((e) => e.weightGrams)) / 1000
+    return { avgWeight, avgIn, avgOut, maxSteps, minWeight }
+  }
+
+  const stats = getStats()
+
+  // 💾 экспорт в CSV
+  function exportCSV() {
+    if (entries.length === 0) return
+    const header = "Дата,Вес,Калории In,Калории Out,Шаги\n"
+    const rows = entries
+      .map(
+        (e) =>
+          `${formatDate(e.date)},${(e.weightGrams / 1000).toFixed(1)},${
+            e.caloriesIn
+          },${e.caloriesOut},${e.steps}`
+      )
+      .join("\n")
+    const blob = new Blob([header + rows], { type: "text/csv" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "fitness-diary.csv"
+    a.click()
+  }
+
+  // фильтр по датам
+  const filteredEntries = entries.filter((e) => {
+    if (startDate && e.date < Number(startDate.replace(/-/g, ""))) return false
+    if (endDate && e.date > Number(endDate.replace(/-/g, ""))) return false
+    return true
+  })
 
   return (
     <>
       <Head>
         <title>Fitness Diary — Mini</title>
-        <meta property="og:title" content="Fitness Diary — Mini" />
-        <meta
-          property="og:description"
-          content="Добавь запись прямо из Warpcast"
-        />
-        <meta
-          property="og:image"
-          content="https://fitness-diary-web.vercel.app/og.png"
-        />
       </Head>
 
       <main className="min-h-screen p-6 space-y-6 bg-gradient-to-b from-gray-50 to-gray-100">
@@ -208,37 +247,25 @@ export default function Frame() {
         <p className="text-center text-gray-600">{status || "Готово"}</p>
 
         {/* меню */}
-        <nav className="flex justify-center gap-4">
-          <button
-            className={`px-4 py-2 rounded-lg transition ${
-              view === "entries"
-                ? "bg-emerald-600 text-white"
-                : "bg-white text-emerald-700 border border-emerald-600 hover:bg-emerald-50"
-            }`}
-            onClick={() => setView("entries")}
-          >
-            📖 Записи
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg transition ${
-              view === "log"
-                ? "bg-emerald-600 text-white"
-                : "bg-white text-emerald-700 border border-emerald-600 hover:bg-emerald-50"
-            }`}
-            onClick={() => setView("log")}
-          >
-            ➕ Добавить
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg transition ${
-              view === "chart"
-                ? "bg-emerald-600 text-white"
-                : "bg-white text-emerald-700 border border-emerald-600 hover:bg-emerald-50"
-            }`}
-            onClick={() => setView("chart")}
-          >
-            📊 График
-          </button>
+        <nav className="flex justify-center gap-3 flex-wrap">
+          {[
+            ["entries", "📖 Записи"],
+            ["log", "➕ Добавить"],
+            ["chart", "📊 График"],
+            ["stats", "🏆 Статистика"],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              className={`px-4 py-2 rounded-lg transition ${
+                view === key
+                  ? "bg-emerald-600 text-white"
+                  : "bg-white text-emerald-700 border border-emerald-600 hover:bg-emerald-50"
+              }`}
+              onClick={() => setView(key as any)}
+            >
+              {label}
+            </button>
+          ))}
         </nav>
 
         {/* Добавить запись */}
@@ -274,34 +301,68 @@ export default function Frame() {
               value={steps}
               onChange={(e) => setSteps(e.target.value)}
             />
-            <button
-              onClick={logEntry}
-              className="bg-emerald-500 text-white px-4 py-2 rounded hover:bg-emerald-600 w-full transition"
-            >
-              ➕ Добавить запись
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={logEntry}
+                className="bg-emerald-500 text-white px-4 py-2 rounded hover:bg-emerald-600 w-full transition"
+              >
+                ➕ Добавить запись
+              </button>
+              <button
+                onClick={() => {
+                  setDate("")
+                  setWeight("")
+                  setCalIn("")
+                  setCalOut("")
+                  setSteps("")
+                }}
+                className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 transition"
+              >
+                🧹 Очистить
+              </button>
+            </div>
           </div>
         )}
 
         {/* Последние записи */}
         {view === "entries" && (
           <div className="space-y-3">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center flex-wrap gap-2">
               <h2 className="font-semibold text-lg text-emerald-700">
                 Последние записи
               </h2>
-              <button
-                onClick={fetchEntries}
-                className="flex items-center gap-1 text-sm text-emerald-600 border border-emerald-600 px-2 py-1 rounded hover:bg-emerald-50 transition"
-              >
-                🔄 Обновить
-              </button>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="border p-1 rounded text-gray-700"
+                />
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="border p-1 rounded text-gray-700"
+                />
+                <button
+                  onClick={fetchEntries}
+                  className="bg-emerald-500 text-white px-3 py-1 rounded hover:bg-emerald-600 transition"
+                >
+                  🔄 Обновить
+                </button>
+                <button
+                  onClick={exportCSV}
+                  className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+                >
+                  💾 Экспорт
+                </button>
+              </div>
             </div>
             {loading && <p className="text-gray-500">Загрузка...</p>}
-            {!loading && entries.length === 0 && (
+            {!loading && filteredEntries.length === 0 && (
               <p className="text-gray-500">Записей пока нет</p>
             )}
-            {entries.map((e, i) => (
+            {filteredEntries.map((e, i) => (
               <div
                 key={i}
                 className="border rounded-xl p-4 shadow-md bg-white hover:shadow-lg transition"
@@ -323,24 +384,54 @@ export default function Frame() {
 
         {/* График */}
         {view === "chart" && (
-          <div className="w-full h-64">
+          <div className="w-full h-72 bg-white p-4 rounded-lg shadow">
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <XAxis dataKey="date" />
                   <YAxis />
                   <Tooltip />
+                  <Legend />
                   <Line
                     type="monotone"
                     dataKey="weight"
                     stroke="#10b981"
                     strokeWidth={2}
+                    name="Вес (кг)"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="calIn"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    name="Калории In"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="calOut"
+                    stroke="#ef4444"
+                    strokeWidth={2}
+                    name="Калории Out"
                   />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
               <p className="text-gray-500">Нет данных для графика</p>
             )}
+          </div>
+        )}
+
+        {/* Статистика */}
+        {view === "stats" && stats && (
+          <div className="bg-white p-6 rounded-lg shadow space-y-2 text-center">
+            <h2 className="text-lg font-bold text-emerald-700">
+              📊 Общая статистика
+            </h2>
+            <p>Средний вес: {stats.avgWeight.toFixed(1)} кг</p>
+            <p>Средний калораж In: {stats.avgIn.toFixed(0)}</p>
+            <p>Средний калораж Out: {stats.avgOut.toFixed(0)}</p>
+            <p>Макс. шагов: {stats.maxSteps}</p>
+            <p>Мин. вес: {stats.minWeight.toFixed(1)} кг</p>
           </div>
         )}
       </main>
