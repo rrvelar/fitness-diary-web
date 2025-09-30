@@ -131,13 +131,14 @@ export default function Frame() {
   }, [])
 
   function handleReset() {
-    if (!startDate) {
-      alert(lang === "ru" ? "⚠️ Сначала выбери дату начала" : "⚠️ Select a start date first")
-      return
-    }
-    localStorage.setItem("resetDate", startDate)
-    setResetDate(startDate)
+  if (!startDate) {
+    alert(lang === "ru" ? "⚠️ Сначала выбери дату начала" : "⚠️ Select a start date first")
+    return
   }
+  localStorage.setItem("resetDate", startDate)
+  setResetDate(startDate)
+  fetchEntries() // 🔥 перезагрузим список, чтобы эффект сразу отобразился
+}
 
   // цели
   const [goalWeight, setGoalWeight] = useState(80)
