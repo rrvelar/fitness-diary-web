@@ -61,8 +61,7 @@ export default function Frame() {
   const [steps, setSteps] = useState<string>("")
 
   const provider = sdk.wallet.ethProvider
-  const pollRef = useRef<NodeJS.Timer | null>(null)
-
+  const pollRef = useRef<number | null>(null)
   // 0) Сообщаем Warpcast, что мини-апп готово (убирает splash)
   useEffect(() => {
     ;(async () => {
@@ -121,10 +120,9 @@ export default function Frame() {
   useEffect(() => {
     if (!userAddress) return
     fetchEntries()
-    if (pollRef.current) clearInterval(pollRef.current)
-    pollRef.current = setInterval(fetchEntries, 5000)
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current)
+    if (pollRef.current !== null) window.clearInterval(pollRef.current)
+    pollRef.current = window.setInterval(fetchEntries, 5000)    return () => {
+      if (pollRef.current !== null) window.clearInterval(pollRef.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userAddress])
